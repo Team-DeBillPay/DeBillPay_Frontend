@@ -172,7 +172,7 @@ export default function ProfilePage() {
                 alt="profile"
                 className="w-[120px] h-[120px] mb-[12px]"
               />
-              // Поля для імені та прізвища 
+              {/* Поля для імені та прізвища */}
               <div className="flex gap-[24px]">
                 <input
                   type="text"
@@ -191,7 +191,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            // Нижній блок 
+            {/* Нижній блок  */}
             <div className="w-full h-[230px] bg-white rounded-[24px] mt-[24px] pt-[32px] pl-[36px]">
               <div className="flex gap-[184px]">
                 <div className="flex flex-col">
@@ -221,7 +221,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  // Поточний Пароль
+                  {/* Поточний Пароль */}
                   <div className="mb-[36px]">
                     <label className="text-[#021024] text-[16px] mb-[12px] block">
                       Пароль
@@ -238,14 +238,14 @@ export default function ProfilePage() {
                           : "border-gray-400"
                       } rounded-[8px] px-[12px] text-[#021024]`}
                     />
-                    //ЗМІНА: Відображення помилки
+                    {/* ЗМІНА: Відображення помилки */}
                     {errors.currentPassword && (
                       <label className="text-red-500 text-xs mt-1 block">
                         {errors.currentPassword}
                       </label>
                     )}
                   </div>
-                  // Новий пароль
+                  {/* Новий пароль */}
                   <div>
                     <label className="text-[#021024] text-[16px] mb-[12px] block">
                       Новий пароль
