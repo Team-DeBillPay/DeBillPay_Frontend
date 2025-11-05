@@ -119,7 +119,7 @@ return (
                   <p className="text-sm text-left">{item.label}</p>
                   {Array.isArray(item.text) ? (
                     item.text.map((line, i) => (
-                      <p key={i} className="text-sm">
+                      <p key={i} className="text-left text-sm">
                         {line}
                       </p>
                     ))

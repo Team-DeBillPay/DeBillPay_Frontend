@@ -8,6 +8,9 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 
+import MyFriends from "./pages/MyFriends.jsx";
+
+
 const NotFound = () => (
   <div className="flex justify-center items-center h-screen">
     <h2 className="text-4xl text-red-600 font-bold">
@@ -28,10 +31,11 @@ export default function App() {
       </Route>
 
       {/* Окремий layout для сторінки профілю */}
-      <Route element={<LayoutPR />}>
-        <Route path="profile" element={<ProfilePage />} />
-      </Route>
+        <Route element={<LayoutPR />}>
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="friends" element={<MyFriends />} />
+        </Route>
+
     </Routes>
   );
 }
-
