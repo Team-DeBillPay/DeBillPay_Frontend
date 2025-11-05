@@ -1,24 +1,25 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { usersAPI } from "../api/users";
+import { getIdFromJWT, getJWT } from "../utils/jwt";
 import iconProfile from "../assets/icons/iconProfile.png";
 import iconClosed from "../assets/icons/closed.png";
 import iconActive from "../assets/icons/active.png";
 
-
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState({
-    firstName: "Паяльникович",
-    lastName: "Михайло",
-    phone: "+380607765488",
-    email: "umalso@gmail.com",
-    password: "ПРГр357", 
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    email: "",
+    password: "********",
   });
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    phone: "",
+    phoneNumber: "",
     email: "",
     currentPassword: "",
     newPassword: "",
@@ -26,71 +27,96 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState({
     currentPassword: "",
     newPassword: "",
+    general: "",
   });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      const userId = getIdFromJWT();
+      
+      if (!userId) {
+        throw new Error("Користувач не авторизований");
+      }
+
+      const userDataFromApi = await usersAPI.getUserById(userId);
+      
+      setUserData({
+        firstName: userDataFromApi.firstName || "",
+        lastName: userDataFromApi.lastName || "",
+        phoneNumber: userDataFromApi.phoneNumber || "",
+        email: userDataFromApi.email || "",
+        password: "********",
+      });
+    } catch (error) {
+      console.error("Помилка завантаження даних:", error);
+      setErrors(prev => ({ ...prev, general: error.message }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleEditClick = () => {
     setFormData({
-      ...userData,
-      currentPassword: "", 
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      phoneNumber: userData.phoneNumber,
+      email: userData.email,
+      currentPassword: "",
       newPassword: "",
     });
-    setErrors({ currentPassword: "", newPassword: "" }); 
+    setErrors({ currentPassword: "", newPassword: "", general: "" });
     setIsEditing(true);
   };
 
   const handleCancelClick = () => {
-    setErrors({ currentPassword: "", newPassword: "" }); 
+    setErrors({ currentPassword: "", newPassword: "", general: "" });
     setIsEditing(false);
   };
 
-  const handleSaveClick = () => {
-    setErrors({ currentPassword: "", newPassword: "" });
+  const handleSaveClick = async () => {
+    try {
+      setErrors({ currentPassword: "", newPassword: "", general: "" });
+      setIsLoading(true);
 
-    let validationFailed = false;
-    let newPasswordErrorMessages = [];
-    const newPassword = formData.newPassword;
-    const currentPassword = formData.currentPassword;
-    if (newPassword) {
-      //Перевірка поточного (старого) пароля
-      if (currentPassword !== userData.password) {
-        setErrors((prev) => ({
-          ...prev,
-          currentPassword: "Неправильний поточний пароль",
-        }));
-        validationFailed = true;
+      const userId = getIdFromJWT();
+      if (!userId) {
+        throw new Error("Користувач не авторизований");
       }
 
-      //  правила нового пароля
-      // Довжина )
-      if (newPassword.length <= 6) {
-        newPasswordErrorMessages.push("довше 6 символів");
+      const updateData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phoneNumber,
+        email: formData.email,
+      };
+
+      if (formData.newPassword) {
+        updateData.password = formData.newPassword;
       }
-      // Наявність великої літери 
-      if (!/[A-ZА-Я]/.test(newPassword)) {
-        newPasswordErrorMessages.push("додайте букву з великої літери");
-      }
-      if (newPasswordErrorMessages.length > 0) {
-        setErrors((prev) => ({
-          ...prev,
-          newPassword: `Новий пароль: ${newPasswordErrorMessages.join(", ")}`,
-        }));
-        validationFailed = true;
-      }
+
+      const updatedUser = await usersAPI.updateUser(userId, updateData);
+      
+      setUserData({
+        ...userData,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        phoneNumber: updatedUser.phoneNumber,
+        email: updatedUser.email,
+      });
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Помилка оновлення даних:", error);
+      setErrors(prev => ({ ...prev, general: error.message }));
+    } finally {
+      setIsLoading(false);
     }
-    if (validationFailed) {
-      return;
-    }
-    setUserData({
-      ...userData,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      phone: formData.phone,
-      email: formData.email,
-      // Логіка: якщо newPassword був наданий (і пройшов валідацію),
-      // беремо його. Інакше — залишаємо старий.
-      password: newPassword || userData.password,
-    });
-    setIsEditing(false); 
   };
 
   const handleFormChange = (e) => {
@@ -99,16 +125,21 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
+
     if (name === "currentPassword" && errors.currentPassword) {
       setErrors((prev) => ({ ...prev, currentPassword: "" }));
     }
     if (name === "newPassword" && errors.newPassword) {
       setErrors((prev) => ({ ...prev, newPassword: "" }));
     }
+    if (errors.general) {
+      setErrors((prev) => ({ ...prev, general: "" }));
+    }
   };
 
-  const handleLogoutClick = () => {
-    navigate("/"); 
+  const handleLogout = () => {
+    localStorage.removeItem('jwt-token');
+    navigate('/');
   };
 
   const checks = [
@@ -156,12 +187,25 @@ export default function ProfilePage() {
   const getPrivacyIcon = (privacy) =>
     privacy === "open" ? iconActive : iconClosed;
 
+  if (isLoading && !isEditing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[#021024] text-[24px]">Завантаження...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-[992px] h-[674px] bg-[#B6CDFF] rounded-[24px] flex px-[36px] py-[32px]">
         {isEditing ? (
-          //  Рредагування
           <div className="w-full flex flex-col">
+            {errors.general && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center">
+                {errors.general}
+              </div>
+            )}
+            
             <div className="w-full h-[292px] bg-white rounded-[24px] flex flex-col items-center pt-[20px]">
               <h2 className="text-[32px] text-[#021024] font-semibold mb-[16px] flex items-center gap-2">
                 Особистий профіль
@@ -172,7 +216,6 @@ export default function ProfilePage() {
                 alt="profile"
                 className="w-[120px] h-[120px] mb-[12px]"
               />
-              {/* Поля для імені та прізвища */}
               <div className="flex gap-[24px]">
                 <input
                   type="text"
@@ -180,6 +223,7 @@ export default function ProfilePage() {
                   value={formData.firstName}
                   onChange={handleFormChange}
                   className="w-[340px] h-[48px] border border-gray-300 rounded-[12px] text-[20px] px-4 text-[#021024]"
+                  placeholder="Ім'я"
                 />
                 <input
                   type="text"
@@ -187,11 +231,11 @@ export default function ProfilePage() {
                   value={formData.lastName}
                   onChange={handleFormChange}
                   className="w-[340px] h-[48px] border border-gray-300 rounded-[12px] text-[20px] px-4 text-[#021024]"
+                  placeholder="Прізвище"
                 />
               </div>
             </div>
 
-            {/* Нижній блок  */}
             <div className="w-full h-[230px] bg-white rounded-[24px] mt-[24px] pt-[32px] pl-[36px]">
               <div className="flex gap-[184px]">
                 <div className="flex flex-col">
@@ -201,10 +245,11 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="tel"
-                      name="phone"
-                      value={formData.phone}
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
                       onChange={handleFormChange}
                       className="w-[340px] h-[33px] border border-gray-400 rounded-[8px] px-[12px] text-[#021024]"
+                      placeholder="+380XXXXXXXXX"
                     />
                   </div>
                   <div>
@@ -217,14 +262,14 @@ export default function ProfilePage() {
                       value={formData.email}
                       onChange={handleFormChange}
                       className="w-[340px] h-[33px] border border-gray-400 rounded-[8px] px-[12px] text-[#021024]"
+                      placeholder="email@example.com"
                     />
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  {/* Поточний Пароль */}
                   <div className="mb-[36px]">
                     <label className="text-[#021024] text-[16px] mb-[12px] block">
-                      Пароль
+                      Поточний пароль
                     </label>
                     <input
                       type="password"
@@ -238,14 +283,12 @@ export default function ProfilePage() {
                           : "border-gray-400"
                       } rounded-[8px] px-[12px] text-[#021024]`}
                     />
-                    {/* ЗМІНА: Відображення помилки */}
                     {errors.currentPassword && (
                       <label className="text-red-500 text-xs mt-1 block">
                         {errors.currentPassword}
                       </label>
                     )}
                   </div>
-                  {/* Новий пароль */}
                   <div>
                     <label className="text-[#021024] text-[16px] mb-[12px] block">
                       Новий пароль
@@ -274,13 +317,15 @@ export default function ProfilePage() {
             <div className="flex mt-[24px] gap-[16px] justify-center">
               <button
                 onClick={handleSaveClick}
-                className="w-[226px] h-[62px] text-white bg-[#456DB4] rounded-[12px] shadow font-semibold hover:bg-[#3a5a9a] transition"
+                disabled={isLoading}
+                className="w-[226px] h-[62px] text-white bg-[#456DB4] rounded-[12px] shadow font-semibold hover:bg-[#3a5a9a] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Зберегти зміни
+                {isLoading ? "Збереження..." : "Зберегти зміни"}
               </button>
               <button
                 onClick={handleCancelClick}
-                className="w-[226px] h-[62px] text-white bg-[#456DB4] rounded-[12px] shadow font-semibold hover:bg-[#3a5a9a] transition"
+                disabled={isLoading}
+                className="w-[226px] h-[62px] text-white bg-[#456DB4] rounded-[12px] shadow font-semibold hover:bg-[#3a5a9a] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Скасувати
               </button>
@@ -288,8 +333,13 @@ export default function ProfilePage() {
           </div>
         ) : (
           <>
-            {/* Ліва частина */}
             <div className="flex flex-col">
+              {errors.general && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center">
+                  {errors.general}
+                </div>
+              )}
+              
               <div className="w-[468px] h-[292px] bg-white rounded-[24px] flex flex-col items-center pt-[20px]">
                 <h2 className="text-[32px] text-[#021024] font-semibold mb-[16px]">
                   Особистий профіль
@@ -306,7 +356,7 @@ export default function ProfilePage() {
               <div className="w-[468px] h-[225px] bg-white rounded-[24px] mt-[24px] flex flex-col justify-between px-[44px] py-[44px]">
                 <div className="flex justify-between text-[#021024] text-[20px]">
                   <span>Номер телефону</span>
-                  <span>{userData.phone}</span>
+                  <span>{userData.phoneNumber}</span>
                 </div>
                 <div className="flex justify-between text-[#021024] text-[20px]">
                   <span>Пошта</span>
@@ -314,7 +364,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex justify-between text-[#021024] text-[20px]">
                   <span>Пароль</span>
-                  <span>{userData.password.replace(/./g, "*")}</span>
+                  <span>{userData.password}</span>
                 </div>
               </div>
               <div className="flex mt-[24px] gap-[16px]">
@@ -325,21 +375,19 @@ export default function ProfilePage() {
                   Редагувати
                 </button>
                 <button
-                  onClick={handleLogoutClick}
-                  className="w-[226px] h-[62px] text-[#021024] bg-white rounded-[12px] shadow font-semibold hover:bg-gray-50 transition"
+                  onClick={handleLogout}
+                  className="w-[226px] h-[62px] text-[#021024] bg-white rounded-[12px] shadow font-semibold hover:bg-gray-50 transition flex items-center justify-center"
                 >
                   Вийти з системи
                 </button>
               </div>
             </div>
 
-            {/* Права частина */}
             <div className="ml-[36px] w-[434px] h-[611px] bg-white rounded-[24px] flex flex-col pt-[20px] px-[24px] overflow-hidden">
               <h3 className="text-[24px] text-[#021024] font-semibold mb-[24px]">
                 Створені мною чеки
               </h3>
 
-              {/*слайдер */}
               <div className="h-full overflow-y-auto pr-[12px] scrollbar-thin scrollbar-thumb-[#456DB4]/60 scrollbar-track-transparent hover:scrollbar-thumb-[#2B2A3D]">
                 <div className="flex flex-col gap-[16px]">
                   {checks.map((check) => (
@@ -363,7 +411,6 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      {/* Блок Назва + Кнопка */}
                       <div>
                         <div className="px-[24px] mb-[8px] text-left">
                           <p className="text-[22px] font-medium leading-[26px]">
