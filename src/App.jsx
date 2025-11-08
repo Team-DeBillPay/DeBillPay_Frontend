@@ -7,6 +7,8 @@ import MainPage from "./pages/MainPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import ChecksPage from "./pages/ChecksPage.jsx";
+import CheckDetailPage from "./pages/CheckDetailPage";
 
 import MyFriends from "./pages/MyFriends.jsx";
 
@@ -31,11 +33,16 @@ export default function App() {
       </Route>
 
       {/* Окремий layout для сторінки профілю */}
-        <Route element={<LayoutPR />}>
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="friends" element={<MyFriends />} />
-        </Route>
+      <Route element={<LayoutPR />}>
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="friends" element={<MyFriends />} />
 
+        {/* додаткові роути з e-bills */}
+        <Route path="checks">
+          <Route index element={<ChecksPage />} />
+          <Route path=":checkId" element={<CheckDetailPage />} />
+        </Route>
+      </Route>
     </Routes>
   );
 }
