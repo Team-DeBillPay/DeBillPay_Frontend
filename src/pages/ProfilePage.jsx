@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usersAPI } from "../api/users";
+import { checksAPI } from "../api/checks";
 import { getIdFromJWT, getJWT } from "../utils/jwt";
 import iconProfile from "../assets/icons/iconProfile.png";
 import iconClosed from "../assets/icons/closed.png";
@@ -29,10 +30,13 @@ export default function ProfilePage() {
     newPassword: "",
     general: "",
   });
+  const [userChecks, setUserChecks] = useState([]);
+  const [isChecksLoading, setIsChecksLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadUserData();
+    loadUserChecks();
   }, []);
 
   const loadUserData = async () => {
@@ -58,6 +62,29 @@ export default function ProfilePage() {
       setErrors(prev => ({ ...prev, general: error.message }));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadUserChecks = async () => {
+    try {
+      setIsChecksLoading(true);
+      const checksData = await checksAPI.getAllChecks();
+      const currentUserId = getIdFromJWT();
+      
+      // Фильтруем чеки, где пользователь является организатором (isAdminRights: true)
+      const organizedChecks = checksData.filter(check => {
+        const userParticipant = check.participants?.find(
+          participant => participant.userId.toString() === currentUserId
+        );
+        return userParticipant?.isAdminRights === true;
+      });
+      
+      setUserChecks(organizedChecks);
+    } catch (error) {
+      console.error("Помилка завантаження чеків:", error);
+      setErrors(prev => ({ ...prev, general: error.message }));
+    } finally {
+      setIsChecksLoading(false);
     }
   };
 
@@ -142,50 +169,47 @@ export default function ProfilePage() {
     navigate('/');
   };
 
-  const checks = [
-    {
-      id: 1,
-      date: "22.10.2025",
-      title: "Вечеря с друзями на пікніку",
-      status: "paid",
-      privacy: "closed",
-    },
-    {
-      id: 2,
-      date: "12.10.2025",
-      title: "Пікнік",
-      status: "partial",
-      privacy: "open",
-    },
-    {
-      id: 3,
-      date: "22.10.2025",
-      title: "Вечеря с друзями на пікніку",
-      status: "paid",
-      privacy: "closed",
-    },
-    {
-      id: 4,
-      date: "15.10.2025",
-      title: "Обід з колегами",
-      status: "partial",
-      privacy: "open",
-    },
-  ];
+  const handleCheckDetails = (checkId) => {
+    navigate(`/checks/${checkId}`);
+  };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "paid":
+  const getStatusColor = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "погашений":
         return "bg-[#BAFAD0]";
-      case "partial":
+      case "частково погашений":
+        return "bg-[#FEEBBB]";
+      case "непогашений":
         return "bg-[#F9BFC9]";
       default:
         return "bg-gray-300";
     }
   };
 
+  const getLockStatus = (status) => {
+    switch (status) {
+      case "активний":
+        return "open";
+      case "закритий":
+        return "closed";
+      case "архівний":
+        return "closed";
+      default:
+        return "open";
+    }
+  };
+
   const getPrivacyIcon = (privacy) =>
     privacy === "open" ? iconActive : iconClosed;
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('uk-UA', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
   if (isLoading && !isEditing) {
     return (
@@ -389,43 +413,67 @@ export default function ProfilePage() {
               </h3>
 
               <div className="h-full overflow-y-auto pr-[12px] scrollbar-thin scrollbar-thumb-[#456DB4]/60 scrollbar-track-transparent hover:scrollbar-thumb-[#2B2A3D]">
-                <div className="flex flex-col gap-[16px]">
-                  {checks.map((check) => (
-                    <div
-                      key={check.id}
-                      className="w-[338px] h-[140px] bg-[#456DB4] text-white rounded-[16px] flex flex-col justify-between py-[20px]"
-                    >
-                      <div className="flex items-center justify-between px-[24px]">
-                        <p className="text-[12px]">{check.date}</p>
-                        <div className="flex items-center gap-[8px]">
-                          <div
-                            className={`w-[24px] h-[24px] rounded-full ${getStatusColor(
-                              check.status
-                            )}`}
-                          />
-                          <img
-                            src={getPrivacyIcon(check.privacy)}
-                            alt="privacy"
-                            className="w-[24px] h-[24px]"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="px-[24px] mb-[8px] text-left">
-                          <p className="text-[22px] font-medium leading-[26px]">
-                            {check.title}
-                          </p>
-                        </div>
-                        <div className="flex justify-end items-center pr-[24px]">
-                          <button className="w-[155px] h-[38px] bg-[#B6CDFF] text-black font-semibold rounded-[8px] hover:bg-[#A4C2F5] transition">
-                            Детальніше
-                          </button>
-                        </div>
-                      </div>
+                {isChecksLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="text-[#021024] text-[16px]">Завантаження чеків...</div>
+                  </div>
+                ) : userChecks.length === 0 ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="text-[#4B6C9A] text-[16px] text-center">
+                      Ви ще не створили жодного чеку
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-[16px]">
+                    {userChecks.map((check) => {
+                      const currentUserId = getIdFromJWT();
+                      const userParticipant = check.participants?.find(
+                        participant => participant.userId.toString() === currentUserId
+                      );
+                      const paymentStatus = userParticipant?.paymentStatus || "непогашений";
+                      const lockStatus = getLockStatus(check.status);
+
+                      return (
+                        <div
+                          key={check.ebillId}
+                          className="w-[338px] h-[140px] bg-[#456DB4] text-white rounded-[16px] flex flex-col justify-between py-[20px]"
+                        >
+                          <div className="flex items-center justify-between px-[24px]">
+                            <p className="text-[12px]">{formatDate(check.createdAt)}</p>
+                            <div className="flex items-center gap-[8px]">
+                              <div
+                                className={`w-[24px] h-[24px] rounded-full ${getStatusColor(
+                                  paymentStatus
+                                )}`}
+                              />
+                              <img
+                                src={getPrivacyIcon(lockStatus)}
+                                alt="privacy"
+                                className="w-[24px] h-[24px]"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="px-[24px] mb-[8px] text-left">
+                              <p className="text-[22px] font-medium leading-[26px]">
+                                {check.name}
+                              </p>
+                            </div>
+                            <div className="flex justify-end items-center pr-[24px]">
+                              <button 
+                                onClick={() => handleCheckDetails(check.ebillId)}
+                                className="w-[155px] h-[38px] bg-[#B6CDFF] text-black font-semibold rounded-[8px] hover:bg-[#A4C2F5] transition"
+                              >
+                                Детальніше
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </>

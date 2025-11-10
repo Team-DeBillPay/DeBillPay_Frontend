@@ -40,7 +40,7 @@ export default function App() {
         {/* додаткові роути з e-bills */}
         <Route path="checks">
           <Route index element={<ChecksPage />} />
-          <Route path=":checkId" element={<CheckDetailPage />} />
+          <Route path=":ebillId" element={<CheckDetailPage />} />
         </Route>
       </Route>
     </Routes>

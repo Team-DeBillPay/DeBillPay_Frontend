@@ -1,67 +1,44 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import searchIcon from "../assets/icons/searchIcon.png";
 import filterIcon from "../assets/icons/filterIcon.png";
 import CheckCard from "../components/CheckCard";
+import { checksAPI } from "../api/checks";
+import { getIdFromJWT } from "../utils/jwt";
 
-const CURRENT_USER_ID = "user-123";
 
-const mockChecks = [
-  ...Array(20)
-    .fill(0)
-    .map((_, i) => ({
-      id: `check-${i + 1}`,
-      title: `Пікнік ${i + 1}`,
-      date: `12.10.2025`,
-      organizerId: i % 3 === 0 ? "user-123" : `user-${456 + i}`,
-      paymentStatus: ["paid", "partial", "unpaid"][i % 3],
-      lockStatus: i % 2 === 0 ? "closed" : "open",
-    })),
-];
-
-/**
- * Компонент Пагінації
- */
 const Pagination = ({ totalPages, currentPage, onPageChange }) => {
   const pageNumbers = [];
 
-  if (totalPages <= 3) {
-    // Якщо сторінок 3 або менше, показуємо всі
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
-  } else {
-    // Логіка для "1, 2, ... 5"
-    pageNumbers.push(1);
-    if (currentPage > 2) {
-      pageNumbers.push("...");
-    }
-    if (currentPage > 1 && currentPage < totalPages) {
-      pageNumbers.push(currentPage);
-    } else if (currentPage === 1) {
-      pageNumbers.push(2);
-    } else if (currentPage === totalPages && totalPages > 2) {
-      pageNumbers.push(totalPages - 1);
-    }
-    if (currentPage < totalPages - 1) {
-      pageNumbers.push("...");
-    }
+  pageNumbers.push(1);
+
+  let startPage = Math.max(2, currentPage - 1);
+  let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+  if (startPage > 2) {
+    pageNumbers.push("...");
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
+  if (endPage < totalPages - 1) {
+    pageNumbers.push("...");
+  }
+
+  if (totalPages > 1) {
     pageNumbers.push(totalPages);
   }
 
-  // Видаляємо дублікати "...", якщо вони поруч
-  const finalPages = pageNumbers.filter((page, index) => {
-    return page !== "..." || pageNumbers[index - 1] !== "...";
-  });
-
   return (
     <div className="flex justify-center items-center gap-2">
-      {finalPages.map((page, index) => {
+      {pageNumbers.map((page, index) => {
         const isActive = page === currentPage;
         if (page === "...") {
           return (
             <span
               key={index}
-              className="w-10 h-10 flex items-center justify-center"
+              className="w-10 h-10 flex items-center justify-center text-[#6178C8]"
             >
               ...
             </span>
@@ -90,30 +67,42 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
 };
 
 export default function MyChecksPage() {
-  // --- Стан (State) ---
-  const [checks, setChecks] = useState(mockChecks);
-  //   const [checks, setChecks] = useState([]); // <-- Для тесту "Поки що немає"
+  const [checks, setChecks] = useState([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // --- Обчислювана Логіка ---
-  // Визначаємо, скільки чеків на сторінці, залежно від фільтра
+  useEffect(() => {
+    const loadChecks = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const checksData = await checksAPI.getAllChecks();
+        setChecks(checksData);
+      } catch (err) {
+        console.error("Помилка завантаження чеків:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadChecks();
+  }, []);
+
   const checksPerPage = isFilterOpen ? 8 : 12;
 
-  // Загальна кількість сторінок
   const totalPages = Math.ceil(checks.length / checksPerPage);
 
-  // Обчислюємо, які чеки показати на поточній сторінці
   const currentChecks = useMemo(() => {
     const start = (currentPage - 1) * checksPerPage;
     const end = start + checksPerPage;
     return checks.slice(start, end);
   }, [checks, currentPage, checksPerPage]);
 
-  // --- Обробники Подій ---
   const handleFilterToggle = () => {
     setIsFilterOpen((prev) => !prev);
-    // При зміні фільтра, повертаємось на 1-шу сторінку
     setCurrentPage(1);
   };
 
@@ -121,6 +110,26 @@ export default function MyChecksPage() {
     window.scrollTo(0, 0);
     setCurrentPage(page);
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
+        <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
+          <p className="text-xl text-[#4B6C9A]">Завантаження чеків...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
+        <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
+          <p className="text-xl text-red-600">Помилка: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
@@ -152,22 +161,16 @@ export default function MyChecksPage() {
           </button>
         </div>
 
-        {/* --- Основний Контент --- */}
-
+        {/* Основний Контент */}
         {checks.length === 0 ? (
-          // ----- Стан 1: Чеків Немає -----
           <div className="w-[936px] h-[571px] flex items-center justify-center mx-auto">
             <p className="text-xl text-[#4B6C9A]">
               Поки що у Вас немає чеків...
             </p>
           </div>
         ) : (
-          // ----- Стан 2: Чеки Є -----
           <>
-            {/* Контейнер для сітки та фільтра */}
             <div className="grid grid-cols-3 gap-2 mt-6 px-7 transition-all duration-300 ease-in-out">
-              {/* Сітка чеків */}
-              {/* Займає 2 або 3 колонки, залежно від фільтра */}
               <div
                 className={`grid ${
                   isFilterOpen
@@ -176,12 +179,10 @@ export default function MyChecksPage() {
                 } gap-2 transition-all duration-300 ease-in-out`}
               >
                 {currentChecks.map((check) => (
-                  <CheckCard key={check.id} check={check} />
+                  <CheckCard key={check.ebillId} check={check} />
                 ))}
               </div>
 
-              {/* Блок Фільтра */}
-              {/* З'являється і займає 1 колонку */}
               {isFilterOpen && (
                 <div className="col-span-1 border-2 border-[#456DB4] rounded-lg p-4 text-[#6178C8]">
                   <h3 className="text-lg font-semibold mb-4">Фільтри</h3>
@@ -189,9 +190,7 @@ export default function MyChecksPage() {
                 </div>
               )}
             </div>
-
-            {/* Блок Пагінації */}
-            {/* З'являється, тільки якщо сторінок більше однієї */}
+            
             {totalPages > 1 && (
               <div className="mt-9">
                 <Pagination

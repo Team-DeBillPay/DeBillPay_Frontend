@@ -5,182 +5,9 @@ import returnBackIcon from "../assets/icons/returnback.png";
 import commentsIcon from "../assets/icons/commentsIcon.png";
 import historyIcon from "../assets/icons/historyIcon.png";
 import settingsIcon from "../assets/icons/settingsIcon.png";
-
-const CURRENT_USER_ID = "user-123";
-
-const mockChecks = [
-  // --- Сценарій 1: Рівний розподіл ---
-  {
-    id: "check-1",
-    title: "Пікнік",
-    scenario: "equal",
-    description:
-      "Спільні витрати на продукти, напої та оренду мангалу під час пікніка. Витрати діляться порівну між усіма учасниками.",
-    organizer: {
-      id: "user-456",
-      name: "Віталя П.",
-      avatar: iconProfile,
-      totalSpent: 1200,
-    },
-    status: { general: "Активний", userSpecific: "Погашений" },
-    participants: [
-      {
-        id: "user-456",
-        name: "Віталя П.",
-        toPay: 0,
-        paid: 0,
-        debt: 0,
-      },
-      {
-        id: "user-123", // Це "Я" (поточний користувач)
-        name: "Владислав Якубець",
-        toPay: 300,
-        paid: 300,
-        debt: 0,
-      },
-      {
-        id: "user-789",
-        name: "Джоніс Золото",
-        toPay: 300,
-        paid: 150,
-        debt: 150,
-      },
-      {
-        id: "user-101",
-        name: "Яся Аналітік",
-        toPay: 300,
-        paid: 300,
-        debt: 0,
-      },
-    ],
-  },
-
-  // --- Сценарій 2: Індивідуальні суми ---
-  {
-    id: "check-2",
-    title: "Ресторан",
-    scenario: "individual",
-    description:
-      "Влад їв Цезаря, Джоніс їв стейк, а Яся випила каву з десертом.",
-    organizer: {
-      id: "user-456",
-      name: "Віталя П.",
-      avatar: iconProfile,
-      totalSpent: 1200,
-    },
-    status: { general: "Активний", userSpecific: "Погашений" },
-    participants: [
-      {
-        id: "user-456",
-        name: "Віталя П.",
-        toPay: 0,
-        paid: 0,
-        debt: 0,
-      },
-      {
-        id: "user-123", // Це "Я"
-        name: "Владислав Якубець",
-        toPay: 300,
-        paid: 0,
-        debt: 300,
-      },
-      {
-        id: "user-789",
-        name: "Джоніс Золото",
-        toPay: 350,
-        paid: 150,
-        debt: 200,
-      },
-      {
-        id: "user-101",
-        name: "Яся Аналітік",
-        toPay: 200,
-        paid: 200,
-        debt: 0,
-      },
-    ],
-  },
-
-  // --- Сценарій 3: Спільні витрати ---
-  {
-    id: "check-3",
-    title: "Пікнік",
-    scenario: "shared",
-    description:
-      "Кожен учасник купував окремі продукти для пікніка: хтось — м'ясо, хтось — напої, хтось — одноразовий посуд.",
-    totalExpenses: 600,
-    organizer: {
-      id: "user-101", // Організатором є "Яся"
-      name: "Яся А.",
-      avatar: iconProfile,
-    },
-    status: { general: "Активний", userSpecific: "Частково погашений" },
-    participants: [
-      {
-        id: "user-456",
-        name: "Владислав Якубець",
-        spent: 300,
-        toPay: 200,
-        paid: 300,
-        difference: -100, // Переплатив
-      },
-      {
-        id: "user-789",
-        name: "Джоніс Золото",
-        spent: 200,
-        toPay: 200,
-        paid: 200,
-        difference: 0, // Баланс
-      },
-      {
-        id: "user-123", // Це "Я" (поточний користувач)
-        name: "Яся Аналітік",
-        spent: 100,
-        toPay: 200,
-        paid: 100, // Сплатила лише 100 з 200
-        difference: +100, // Має борг
-      },
-    ],
-  },
-
-  // --- Сценарій 4: Рівний розподіл (Я - ОРГАНІЗАТОР) + Немає опису ---
-  {
-    id: "check-4",
-    title: "Вечеря",
-    scenario: "equal",
-    description: "",
-    organizer: {
-      id: "user-123", // "Я" - Організатор
-      name: "Владислав Я.",
-      avatar: iconProfile,
-      totalSpent: 1350,
-    },
-    status: { general: "Закритий", userSpecific: "Погашений" },
-    participants: [
-      {
-        id: "user-123", // "Я"
-        name: "Владислав Якубець",
-        toPay: 0,
-        paid: 0,
-        debt: 0,
-      },
-      {
-        id: "user-789",
-        name: "Джоніс Золото",
-        toPay: 450,
-        paid: 450,
-        debt: 0,
-      },
-      {
-        id: "user-101",
-        name: "Яся Аналітік",
-        toPay: 450,
-        paid: 450,
-        debt: 0,
-      },
-    ],
-  },
-];
+import { checksAPI } from "../api/checks";
+import { usersAPI } from "../api/users";
+import { getIdFromJWT } from "../utils/jwt";
 
 const CheckHeader = ({ title, isUserOrganizer }) => {
   const navigate = useNavigate();
@@ -235,15 +62,16 @@ const CheckHeader = ({ title, isUserOrganizer }) => {
 };
 
 const statusStyles = {
-  Активний: "bg-[#7BE495]",
-  Закритий: "bg-[#E5566C]",
-  Погашений: "bg-[#A4FFC4]",
-  "Частково погашений": "bg-[#FEEBBB]",
-  Непогашений: "bg-[#FFACAE]",
+  активний: "bg-[#7BE495]",
+  закритий: "bg-[#E5566C]",
+  архівний: "bg-[#E5566C]",
+  погашений: "bg-[#A4FFC4]",
+  "частково погашений": "bg-[#FEEBBB]",
+  непогашений: "bg-[#FFACAE]",
 };
 
 const StatusTag = ({ text }) => {
-  const bgColor = statusStyles[text] || "bg-gray-300"; // Заглушка, якщо статус невідомий
+  const bgColor = statusStyles[text] || "bg-gray-300";
 
   return (
     <span
@@ -257,8 +85,18 @@ const StatusTag = ({ text }) => {
   );
 };
 
-const CheckInfoBlocks = ({ check, currentUserId, isUserOrganizer }) => {
-  const { organizer, description, status, totalExpenses } = check;
+const CheckInfoBlocks = ({ check, currentUserId, isUserOrganizer, organizerUser }) => {
+  const { description, status } = check;
+
+  const getOrganizerName = () => {
+    if (!organizerUser) return "Завантаження...";
+    
+    const firstName = organizerUser.firstName || '';
+    const lastName = organizerUser.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    
+    return fullName || `Користувач ${organizerUser.userId || organizerUser.id}`;
+  };
 
   return (
     <div className="flex flex-row gap-4 items-start">
@@ -269,18 +107,18 @@ const CheckInfoBlocks = ({ check, currentUserId, isUserOrganizer }) => {
         </h3>
         <div className="flex items-center gap-3">
           <img
-            src={organizer.avatar}
+            src={iconProfile}
             alt="avatar"
             className="w-10 h-10 rounded-full"
           />
           <span className="font-medium text-[18px] text-[#042860]">
-            {organizer.name} {isUserOrganizer && "(Я)"}
+            {getOrganizerName()} {isUserOrganizer && "(Я)"}
           </span>
         </div>
         <div className="mt-4 flex flex-col gap-[8px]">
           <span className="text-[18px] text-[#042860]">Витрати:</span>
           <p className="bg-white rounded-lg py-2 px-7 font-semibold text-[18px] text-[#042860] inline-block mt-1">
-            {organizer.totalSpent || totalExpenses || "---"} грн
+            {check.amountOfDept || "---"} {check.currency}
           </p>
         </div>
       </div>
@@ -303,8 +141,8 @@ const CheckInfoBlocks = ({ check, currentUserId, isUserOrganizer }) => {
           Статуси
         </h3>
         <div className="flex flex-col items-start gap-2 ">
-          <StatusTag text={status.general} />
-          <StatusTag text={status.userSpecific} />
+          <StatusTag text={status} />
+          <StatusTag text={check.currentUserPaymentStatus} />
         </div>
       </div>
     </div>
@@ -317,16 +155,25 @@ const ParticipantsTable = ({
   currentUserId,
   organizerId,
   scenarioMarginBottom,
-  totalExpenses,
+  amountOfDept,
+  currency
 }) => {
-  const formatName = (id, name) => {
-    return id === currentUserId ? `${name} (Я)` : name;
+  const formatName = (userId, name, isCurrentUser) => {
+    return isCurrentUser ? `${name} (Я)` : name;
   };
 
-  const filteredParticipants =
-    scenario === "shared"
-      ? participants
-      : participants.filter((p) => p.id !== organizerId);
+  const filteredParticipants = participants.filter(p => 
+    scenario === "спільні витрати" ? true : !p.isAdminRights
+  );
+
+  const getScenarioDisplayName = (scenario) => {
+    switch (scenario) {
+      case "рівний розподіл": return "Рівний розподіл";
+      case "індивідуальні суми": return "Індивідуальні суми";
+      case "спільні витрати": return "Спільні витрати";
+      default: return scenario;
+    }
+  };
 
   const scenarioInfo = (
     <div
@@ -334,36 +181,30 @@ const ParticipantsTable = ({
         scenarioMarginBottom || "mb-6"
       } flex justify-between items-center`}
     >
-      {/* Заголовок і опис поруч */}
       <div className="flex items-center gap-4">
         <h3 className="text-[20px] text-[#021024] font-semibold">
           Сценарій розрахунку:
         </h3>
         <p className="text-[20px] text-[#042860]">
-          {scenario === "shared"
-            ? "Спільні витрати"
-            : scenario === "equal"
-            ? "Рівний розподіл"
-            : "Індивідуальні суми"}
+          {getScenarioDisplayName(scenario)}
         </p>
       </div>
 
       {/* Блок "Загальні витрати" (тільки для 3 сценарію) */}
-      {scenario === "shared" && (
+      {scenario === "спільні витрати" && (
         <div className="flex items-center gap-4">
           <h3 className="text-[20px] text-[#021024] font-semibold">
             Загальні витрати:
           </h3>
           <p className="text-[20px] text-[#042860] font-semibold">
-            {totalExpenses} грн
+            {amountOfDept} {currency}
           </p>
         </div>
       )}
     </div>
   );
 
-  // --- Сценарій 3: Спільні витрати (5 колонок) ---
-  if (scenario === "shared") {
+  if (scenario === "спільні витрати") {
     return (
       <>
         {scenarioInfo}
@@ -382,30 +223,39 @@ const ParticipantsTable = ({
             </tr>
           </thead>
           <tbody className="text-left text-[18px] text-[#042860]">
-            {filteredParticipants.map((p) => (
-              <tr key={p.id}>
-                <td className="p-3  border border-[#8A9CCB] font-semibold">
-                  {formatName(p.id, p.name)}
-                </td>
-                <td className="p-3 border border-[#8A9CCB]">{p.spent} грн</td>
-                <td className="p-3 border border-[#8A9CCB]">{p.toPay} грн</td>
-                <td className="p-3 border border-[#8A9CCB]">{p.paid} грн</td>
-                <td
-                  className={`p-3 font-semibold text-[18px] border border-[#8A9CCB] ${
-                    p.difference > 0 ? "text-[#E5566C]" : "text-[#7BE495]"
-                  }`}
-                >
-                  {p.difference} грн
-                </td>
-              </tr>
-            ))}
+            {filteredParticipants.map((p) => {
+              const difference = (p.paidAmount || 0) - (p.assignedAmount || 0);
+              const isOverpaid = difference > 0;
+              const isUnderpaid = difference < 0;
+              
+              return (
+                <tr key={p.userId}>
+                  <td className="p-3 border border-[#8A9CCB] font-semibold">
+                    {formatName(p.userId, p.userName, p.userId.toString() === currentUserId)}
+                  </td>
+                  <td className="p-3 border border-[#8A9CCB]">{p.paidAmount || 0} {currency}</td>
+                  <td className="p-3 border border-[#8A9CCB]">{p.assignedAmount || 0} {currency}</td>
+                  <td className="p-3 border border-[#8A9CCB]">{p.balance || 0} {currency}</td>
+                  <td
+                    className={`p-3 font-semibold text-[18px] border border-[#8A9CCB] ${
+                      isUnderpaid 
+                        ? "text-[#E5566C]"
+                        : isOverpaid 
+                        ? "text-[#7BE495]"
+                        : "text-[#042860]"
+                    }`}
+                  >
+                    {difference > 0 ? `+${difference}` : difference} {currency}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </>
     );
   }
 
-  // --- Сценарії 1 та 2: Рівний / Індивідуальний (4 колонки) ---
   return (
     <>
       {scenarioInfo}
@@ -421,43 +271,49 @@ const ParticipantsTable = ({
           </tr>
         </thead>
         <tbody className="text-left text-[18px] text-[#042860]">
-          {filteredParticipants.map((p) => (
-            <tr key={p.id}>
-              <td className="p-3 border border-[#8A9CCB] font-semibold">
-                {formatName(p.id, p.name)}
-              </td>
-              <td className="p-3 border border-[#8A9CCB]">{p.toPay} грн</td>
-              <td className="p-3 border border-[#8A9CCB]">{p.paid} грн</td>
-              <td className="p-3 font-semibold border border-[#8A9CCB]">
-                {p.debt} грн
-              </td>
-            </tr>
-          ))}
+          {filteredParticipants.map((p) => {
+            const debt = (p.assignedAmount || 0) - (p.balance || 0);
+            return (
+              <tr key={p.userId}>
+                <td className="p-3 border border-[#8A9CCB] font-semibold">
+                  {formatName(p.userId, p.userName, p.userId.toString() === currentUserId)}
+                </td>
+                <td className="p-3 border border-[#8A9CCB]">{p.assignedAmount || 0} {currency}</td>
+                <td className="p-3 border border-[#8A9CCB]">{p.balance || 0} {currency}</td>
+                <td className="p-3 font-semibold border border-[#8A9CCB]">
+                  {debt} {currency}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </>
   );
 };
 
-const PaymentSection = ({ check, currentUserData }) => {
+const PaymentSection = ({ check, currentUserData, currency }) => {
   const [paymentType, setPaymentType] = useState("full");
-
-  let userDebt = 0;
-  if (check.scenario === "shared") {
-    userDebt = currentUserData?.difference > 0 ? currentUserData.difference : 0;
-  } else {
-    userDebt = currentUserData?.debt > 0 ? currentUserData.debt : 0;
-  }
-
   const [partialAmount, setPartialAmount] = useState(0);
   const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState("");
+
+  const userDebt = useMemo(() => {
+    if (!currentUserData) return 0;
+    
+    if (check.scenario === "спільні витрати") {
+      const difference = (currentUserData.paidAmount || 0) - (currentUserData.assignedAmount || 0);
+      return difference > 0 ? difference : 0;
+    } else {
+      const debt = (currentUserData.assignedAmount || 0) - (currentUserData.balance || 0);
+      return debt > 0 ? debt : 0;
+    }
+  }, [currentUserData, check.scenario]);
 
   useEffect(() => {
     setPartialAmount(userDebt);
   }, [userDebt]);
 
-  // Обробник, який валідує максимальну суму
   const handleAmountChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
@@ -476,13 +332,18 @@ const PaymentSection = ({ check, currentUserData }) => {
     }
 
     if (numValue > userDebt) {
-      setError(`Сума не може перевищувати ваш борг: ${userDebt} грн`);
+      setError(`Сума не може перевищувати ваш борг: ${userDebt} ${currency}`);
     } else if (numValue < 0) {
       setError("Сума не може бути негативною.");
     } else {
       setError("");
       setPartialAmount(numValue);
     }
+  };
+
+  const handlePayment = () => {
+    console.log("Оплата:", paymentType === "full" ? userDebt : partialAmount);
+    alert(`Функція оплати буде реалізована пізніше. Сума: ${paymentType === "full" ? userDebt : partialAmount} ${currency}`);
   };
 
   if (userDebt <= 0) {
@@ -525,19 +386,22 @@ const PaymentSection = ({ check, currentUserData }) => {
             <input
               type="number"
               value={inputValue}
-              placeholder={userDebt}
+              placeholder={userDebt.toString()}
               onChange={handleAmountChange}
               className="block w-[128px] rounded-lg border border-[#7B9CCA] text-[#979AB7] py-2 px-8 shadow-sm placeholder:text-[#979AB7]"
             />
+            <span className="text-[#042860]">{currency}</span>
           </div>
-          {/* Умовний рендеринг повідомлення про помилку */}
           {error && <p className="text-red-600 text-sm mt-2 ml-4">{error}</p>}
         </div>
       )}
 
       {/* Головна кнопка оплати */}
       <div className="w-full flex justify-center">
-        <button className="mt-10 bg-[#456DB4] text-white rounded-[20px] py-4 px-[60px] font-semibold text-lg hover:bg-blue-700">
+        <button 
+          onClick={handlePayment}
+          className="mt-10 bg-[#456DB4] text-white rounded-[20px] py-4 px-[60px] font-semibold text-lg hover:bg-blue-700"
+        >
           Сплатити борг
         </button>
       </div>
@@ -546,54 +410,148 @@ const PaymentSection = ({ check, currentUserData }) => {
 };
 
 export default function CheckDetailPage() {
-  const { checkId } = useParams(); // ID чеку з URL
-  const [check, setCheck] = useState(null); // Стан для даних чеку
+  const { ebillId } = useParams();
+  const navigate = useNavigate();
+  const [check, setCheck] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [users, setUsers] = useState({});
+  const [organizerUser, setOrganizerUser] = useState(null);
+
+  const currentUserId = getIdFromJWT();
 
   useEffect(() => {
-    const foundCheck = mockChecks.find((c) => c.id === checkId);
-    setCheck(foundCheck);
-  }, [checkId]);
+    const loadCheckData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const checkData = await checksAPI.getCheckById(ebillId);
+        console.log('Check data:', checkData);
 
-  // useMemo, щоб не перераховувати при кожному рендері
+        const organizerParticipant = checkData.participants.find(p => p.isAdminRights);
+        if (organizerParticipant) {
+          const organizer = await usersAPI.getUserById(organizerParticipant.userId);
+          console.log('Organizer data:', organizer);
+          setOrganizerUser(organizer);
+        }
+
+        const usersData = {};
+        for (const participant of checkData.participants) {
+          if (!usersData[participant.userId]) {
+            const user = await usersAPI.getUserById(participant.userId);
+            console.log(`User data for ${participant.userId}:`, user);
+            usersData[participant.userId] = user;
+          }
+        }
+        setUsers(usersData);
+
+        const enrichedCheck = {
+          ...checkData,
+          participants: checkData.participants.map(participant => {
+            const userData = usersData[participant.userId];
+            const firstName = userData?.firstName || '';
+            const lastName = userData?.lastName || '';
+            const fullName = `${firstName} ${lastName}`.trim();
+            
+            return {
+              ...participant,
+              userName: fullName || `Користувач ${participant.userId}`
+            };
+          }),
+          currentUserPaymentStatus: checkData.participants.find(
+            p => p.userId.toString() === currentUserId?.toString()
+          )?.paymentStatus || "непогашений"
+        };
+
+        console.log('Enriched check:', enrichedCheck);
+        setCheck(enrichedCheck);
+      } catch (err) {
+        console.error("Помилка завантаження чеку:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (ebillId && currentUserId) {
+      loadCheckData();
+    }
+  }, [ebillId, currentUserId]);
+
   const currentUserParticipant = useMemo(() => {
-    return check?.participants.find((p) => p.id === CURRENT_USER_ID);
-  }, [check]);
+    return check?.participants.find((p) => p.userId.toString() === currentUserId?.toString());
+  }, [check, currentUserId]);
 
-  const isUserOrganizer = check?.organizer.id === CURRENT_USER_ID;
+  const isUserOrganizer = currentUserParticipant?.isAdminRights || false;
+
+  if (loading) {
+    return (
+      <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
+        <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
+          <p className="text-xl text-[#4B6C9A]">Завантаження деталей чеку...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
+        <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
+          <p className="text-xl text-red-600">Помилка: {error}</p>
+          <button 
+            onClick={() => navigate("/checks")}
+            className="ml-4 bg-[#456DB4] text-white px-4 py-2 rounded-lg"
+          >
+            Повернутися до чеків
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!check) {
-    return <div>Завантаження...</div>;
+    return (
+      <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
+        <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
+          <p className="text-xl text-[#4B6C9A]">Чек не знайдено</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
       <div className="bg-white rounded-[24px] px-10 pt-7 pb-9">
-        {" "}
         {/* Компонент 1: Заголовок */}
         <div className="mb-5">
-          <CheckHeader title={check.title} isUserOrganizer={isUserOrganizer} />
+          <CheckHeader title={check.name} isUserOrganizer={isUserOrganizer} />
         </div>
         {/* Компонент 2: Інформаційні блоки */}
         <div className="mb-6">
           <CheckInfoBlocks
             check={check}
-            currentUserId={CURRENT_USER_ID}
+            currentUserId={currentUserId}
             isUserOrganizer={isUserOrganizer}
+            organizerUser={organizerUser}
           />
         </div>
         {/* Компонент 3: Таблиця */}
         <ParticipantsTable
           scenario={check.scenario}
           participants={check.participants}
-          currentUserId={CURRENT_USER_ID}
-          organizerId={check.organizer.id}
+          currentUserId={currentUserId}
+          organizerId={organizerUser?.userId}
           scenarioMarginBottom="mb-6"
-          totalExpenses={check.totalExpenses}
+          amountOfDept={check.amountOfDept}
+          currency={check.currency}
         />
         {/* Компонент 4: Логіка оплати */}
         <PaymentSection
           check={check}
           currentUserData={currentUserParticipant}
+          currency={check.currency}
         />
       </div>
     </div>
