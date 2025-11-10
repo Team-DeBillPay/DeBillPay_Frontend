@@ -292,7 +292,7 @@ const ParticipantsTable = ({
   );
 };
 
-const PaymentSection = ({ check, currentUserData, currency }) => {
+const PaymentSection = ({ check, currentUserData, currency, isUserOrganizer }) => {
   const [paymentType, setPaymentType] = useState("full");
   const [partialAmount, setPartialAmount] = useState(0);
   const [inputValue, setInputValue] = useState("");
@@ -313,6 +313,18 @@ const PaymentSection = ({ check, currentUserData, currency }) => {
   useEffect(() => {
     setPartialAmount(userDebt);
   }, [userDebt]);
+
+  const shouldShowPaymentSection = useMemo(() => {
+    if (check.status === "закритий" || check.status === "архівний") {
+      return false;
+    }
+
+    if (isUserOrganizer) {
+      return check.scenario === "спільні витрати" && userDebt > 0;
+    }
+
+    return userDebt > 0;
+  }, [check.status, check.scenario, isUserOrganizer, userDebt]);
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
@@ -346,7 +358,7 @@ const PaymentSection = ({ check, currentUserData, currency }) => {
     alert(`Функція оплати буде реалізована пізніше. Сума: ${paymentType === "full" ? userDebt : partialAmount} ${currency}`);
   };
 
-  if (userDebt <= 0) {
+  if (!shouldShowPaymentSection) {
     return null;
   }
 
@@ -552,6 +564,7 @@ export default function CheckDetailPage() {
           check={check}
           currentUserData={currentUserParticipant}
           currency={check.currency}
+          isUserOrganizer={isUserOrganizer}
         />
       </div>
     </div>
