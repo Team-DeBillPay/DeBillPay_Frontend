@@ -9,6 +9,46 @@ import { checksAPI } from "../api/checks";
 import { usersAPI } from "../api/users";
 import { getIdFromJWT } from "../utils/jwt";
 
+const calculateCheckStatus = (check) => {
+  const { scenario, participants } = check;
+  
+
+  let participantsToCheck = participants;
+  
+  if (scenario === "рівний розподіл" || scenario === "індивідуальні суми") {
+    participantsToCheck = participants.filter(p => !p.isAdminRights);
+  }
+  
+  let hasAnyPayment = false;
+  let allFullyPaid = true;
+  
+  participantsToCheck.forEach(participant => {
+    const balance = participant.balance || 0;
+    const assignedAmount = participant.assignedAmount || 0;
+    
+    
+    if (balance > 0) {
+      hasAnyPayment = true;
+    }
+    
+    if (balance < assignedAmount) {
+      allFullyPaid = false;
+    }
+  });
+  
+  
+  let status;
+  if (allFullyPaid && hasAnyPayment) {
+    status = "погашений";
+  } else if (hasAnyPayment) {
+    status = "частково погашений";
+  } else {
+    status = "непогашений";
+  }
+  
+  return status;
+};
+
 const CheckHeader = ({ title, isUserOrganizer }) => {
   const navigate = useNavigate();
 
@@ -142,7 +182,7 @@ const CheckInfoBlocks = ({ check, currentUserId, isUserOrganizer, organizerUser 
         </h3>
         <div className="flex flex-col items-start gap-2 ">
           <StatusTag text={status} />
-          <StatusTag text={check.currentUserPaymentStatus} />
+          <StatusTag text={check.calculatedStatus} />
         </div>
       </div>
     </div>
@@ -354,7 +394,6 @@ const PaymentSection = ({ check, currentUserData, currency, isUserOrganizer }) =
   };
 
   const handlePayment = () => {
-    console.log("Оплата:", paymentType === "full" ? userDebt : partialAmount);
     alert(`Функція оплати буде реалізована пізніше. Сума: ${paymentType === "full" ? userDebt : partialAmount} ${currency}`);
   };
 
@@ -439,12 +478,10 @@ export default function CheckDetailPage() {
         setError(null);
         
         const checkData = await checksAPI.getCheckById(ebillId);
-        console.log('Check data:', checkData);
 
         const organizerParticipant = checkData.participants.find(p => p.isAdminRights);
         if (organizerParticipant) {
           const organizer = await usersAPI.getUserById(organizerParticipant.userId);
-          console.log('Organizer data:', organizer);
           setOrganizerUser(organizer);
         }
 
@@ -452,12 +489,13 @@ export default function CheckDetailPage() {
         for (const participant of checkData.participants) {
           if (!usersData[participant.userId]) {
             const user = await usersAPI.getUserById(participant.userId);
-            console.log(`User data for ${participant.userId}:`, user);
             usersData[participant.userId] = user;
           }
         }
         setUsers(usersData);
 
+        const calculatedStatus = calculateCheckStatus(checkData);
+        
         const enrichedCheck = {
           ...checkData,
           participants: checkData.participants.map(participant => {
@@ -471,15 +509,14 @@ export default function CheckDetailPage() {
               userName: fullName || `Користувач ${participant.userId}`
             };
           }),
+          calculatedStatus: calculatedStatus,
           currentUserPaymentStatus: checkData.participants.find(
             p => p.userId.toString() === currentUserId?.toString()
           )?.paymentStatus || "непогашений"
         };
 
-        console.log('Enriched check:', enrichedCheck);
         setCheck(enrichedCheck);
       } catch (err) {
-        console.error("Помилка завантаження чеку:", err);
         setError(err.message);
       } finally {
         setLoading(false);

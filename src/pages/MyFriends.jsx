@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { contactsAPI } from "../api/contacts"; // Імпортуємо API контактів
-import { getIdFromJWT, getJWT } from "../utils/jwt"; // Ваші утиліти
+import { contactsAPI } from "../api/contacts";
+import { getIdFromJWT, getJWT } from "../utils/jwt";
 import iconProfile from "../assets/icons/iconProfile.png";
 import AddFriendIcon from "../assets/icons/add.png";
 import Search from "../assets/icons/search.png";
