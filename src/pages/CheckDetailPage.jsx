@@ -137,7 +137,13 @@ const SettingsMenu = ({ isOpen, onClose, onAction }) => {
 
 // --- HEADER COMPONENT ---
 
-const CheckHeader = ({ title, isUserOrganizer }) => {
+const CheckHeader = ({
+  title,
+  isUserOrganizer,
+  isEditMode,
+  onTitleChange,
+  onEditClick,
+}) => {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -154,7 +160,7 @@ const CheckHeader = ({ title, isUserOrganizer }) => {
     setIsSettingsOpen(false);
 
     if (action === "edit") {
-      console.log("Режим редагування...");
+      onEditClick();
     } else if (action === "permissions") {
       console.log("Модальне вікно прав...");
     } else if (action === "delete") {
@@ -169,53 +175,81 @@ const CheckHeader = ({ title, isUserOrganizer }) => {
   };
 
   return (
-    <div className="relative flex items-center z-10">
-      <button
-        onClick={handleBack}
-        className="absolute left-0 text-3xl text-[#052659]"
-        title="Повернутися до чеків"
-      >
-        <img
-          src={returnBackIcon}
-          alt="Повернутися"
-          className="w-[32px] h-[32px]"
-        />
-      </button>
+    <div className="relative flex items-center gap-[16px] z-10">
+      {/* Бейдж режиму редагування */}
+      {isEditMode && (
+        <div className="absolute left-[0px] top-0 bg-[#D1D4E8] rounded-[4px] px-[12px] py-[8px]">
+          <span className="text-[#021024] text-[16px] font-medium">
+            Режим редагування чеку
+          </span>
+        </div>
+      )}
 
-      {/* Заголовок */}
-      <h1 className="w-full text-center text-[32px] text-[#021024] font-semibold">
-        Деталі чеку: “{title}”
-      </h1>
-
-      {/* Блок з іконками */}
-      <div className="absolute right-0 flex items-center gap-4 ">
-        <button title="Коментарі">
+      {!isEditMode && (
+        <button
+          onClick={handleBack}
+          className="absolute left-0 text-3xl text-[#052659]"
+          title="Повернутися до чеків"
+        >
           <img
-            src={commentsIcon}
-            alt="Коментарі"
-            className="w-[28px] h-[28px]"
+            src={returnBackIcon}
+            alt="Повернутися"
+            className="w-[32px] h-[32px]"
           />
         </button>
-        <button title="Історія змін чеку">
-          <img src={historyIcon} alt="Історія" className="w-[28px] h-[28px]" />
-        </button>
-        {isUserOrganizer && (
-          <div>
-            <button title="Налаштування чеку" onClick={toggleSettings}>
-              <img
-                src={settingsIcon}
-                alt="Налаштування"
-                className="w-[28px] h-[28px] cursor-pointer"
-              />
-            </button>
-            <SettingsMenu
-              isOpen={isSettingsOpen}
-              onClose={() => setIsSettingsOpen(false)}
-              onAction={handleMenuAction}
-            />
-          </div>
+      )}
+
+      {/* Заголовок або Поле вводу */}
+      <div className="w-full flex justify-center">
+        {isEditMode ? (
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            className="text-center text-[32px] text-[#021024] font-semibold border-b-2 border-[#021024] bg-transparent focus:outline-none px-2"
+          />
+        ) : (
+          <h1 className="text-center text-[32px] text-[#021024] font-semibold">
+            Деталі чеку: “{title}”
+          </h1>
         )}
       </div>
+
+      {/* Блок з іконками */}
+      {!isEditMode && (
+        <div className="absolute right-0 flex items-center gap-4 ">
+          <button title="Коментарі">
+            <img
+              src={commentsIcon}
+              alt="Коментарі"
+              className="w-[28px] h-[28px]"
+            />
+          </button>
+          <button title="Історія змін чеку">
+            <img
+              src={historyIcon}
+              alt="Історія"
+              className="w-[28px] h-[28px]"
+            />
+          </button>
+          {isUserOrganizer && (
+            <div>
+              <button title="Налаштування чеку" onClick={toggleSettings}>
+                <img
+                  src={settingsIcon}
+                  alt="Налаштування"
+                  className="w-[28px] h-[28px] cursor-pointer"
+                />
+              </button>
+              <SettingsMenu
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                onAction={handleMenuAction}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <DeleteConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -257,8 +291,11 @@ const CheckInfoBlocks = ({
   currentUserId,
   isUserOrganizer,
   organizerUser,
+  isEditMode,
+  onDescriptionChange,
+  onOrganizerExpenseChange,
 }) => {
-  const { description, status } = check;
+  const { description, status, amountOfDept, currency } = check;
 
   const getOrganizerName = () => {
     if (!organizerUser) return "Завантаження...";
@@ -289,22 +326,45 @@ const CheckInfoBlocks = ({
         </div>
         <div className="mt-4 flex flex-col gap-[8px]">
           <span className="text-[18px] text-[#042860]">Витрати:</span>
-          <p className="bg-white rounded-lg py-2 px-7 font-semibold text-[18px] text-[#042860] inline-block mt-1">
-            {check.amountOfDept || "---"} {check.currency}
-          </p>
+          {isEditMode ? (
+            <div className="relative inline-block">
+              <input
+                type="number"
+                value={amountOfDept}
+                onChange={(e) => onOrganizerExpenseChange(e.target.value)}
+                className="w-[100px] bg-white rounded-lg py-2 px-4 font-semibold text-[18px] text-[#042860] border-b-2 border-[#042860] focus:outline-none"
+              />
+              <span className="absolute right-2 top-2 text-[#042860]">
+                {currency}
+              </span>
+            </div>
+          ) : (
+            <p className="bg-white rounded-lg py-2 px-7 font-semibold text-[18px] text-[#042860] inline-block mt-1">
+              {amountOfDept || "---"} {currency}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Блок Опису */}
       <div className="bg-[#EBF1FF] p-5 rounded-[16px] flex-1">
         <h3 className="text-[20px] text-[#021024] font-semibold mb-4">Опис</h3>
-        <p
-          className={`text-[18px] ${
-            description ? "text-[#042860]" : "text-[#979AB7] italic"
-          }`}
-        >
-          {description || "Чек не має опису."}
-        </p>
+        {isEditMode ? (
+          <input
+            value={description || ""}
+            onChange={(e) => onDescriptionChange(e.target.value)}
+            className="w-full h-auto bg-transparent text-[18px] text-[#042860] border-b border-[#042860] focus:outline-none resize-none"
+            placeholder="Введіть опис..."
+          />
+        ) : (
+          <p
+            className={`text-[18px] ${
+              description ? "text-[#042860]" : "text-[#979AB7] italic"
+            }`}
+          >
+            {description || "Чек не має опису."}
+          </p>
+        )}
       </div>
 
       {/* Блок Статусів */}
@@ -321,6 +381,8 @@ const CheckInfoBlocks = ({
   );
 };
 
+// --- TABLE COMPONENT ---
+
 const ParticipantsTable = ({
   scenario,
   participants,
@@ -329,6 +391,10 @@ const ParticipantsTable = ({
   scenarioMarginBottom,
   amountOfDept,
   currency,
+  isEditMode,
+  onParticipantChange,
+  onAddParticipant,
+  onDeleteParticipant,
 }) => {
   const formatName = (userId, name, isCurrentUser) => {
     return isCurrentUser ? `${name} (Я)` : name;
@@ -380,103 +446,163 @@ const ParticipantsTable = ({
     </div>
   );
 
-  if (scenario === "спільні витрати") {
-    return (
-      <>
-        {scenarioInfo}
-        <table className="w-full border-collapse border border-[#8A9CCB] table-fixed">
-          <thead className="bg-[#B6CDFF] text-center text-[14px] text-[#021024] font-semibold">
-            <tr>
-              <th className="p-3 border border-[#8A9CCB]">Учасники чеку</th>
-              <th className="p-3 border border-[#8A9CCB]">
-                Сума, яку витратив
-              </th>
-              <th className="p-3 border border-[#8A9CCB]">
-                Сума, яку має сплатити
-              </th>
-              <th className="p-3 border border-[#8A9CCB]">Вже сплатив</th>
-              <th className="p-3 border border-[#8A9CCB]">Різниця</th>
-            </tr>
-          </thead>
-          <tbody className="text-left text-[18px] text-[#042860]">
-            {filteredParticipants.map((p) => {
-              const difference = (p.paidAmount || 0) - (p.assignedAmount || 0);
-              const isOverpaid = difference > 0;
-              const isUnderpaid = difference < 0;
-
-              return (
-                <tr key={p.userId}>
-                  <td className="p-3 border border-[#8A9CCB] font-semibold">
-                    {formatName(
-                      p.userId,
-                      p.userName,
-                      p.userId.toString() === currentUserId
-                    )}
-                  </td>
-                  <td className="p-3 border border-[#8A9CCB]">
-                    {p.paidAmount || 0} {currency}
-                  </td>
-                  <td className="p-3 border border-[#8A9CCB]">
-                    {p.assignedAmount || 0} {currency}
-                  </td>
-                  <td className="p-3 border border-[#8A9CCB]">
-                    {p.balance || 0} {currency}
-                  </td>
-                  <td
-                    className={`p-3 font-semibold text-[18px] border border-[#8A9CCB] ${
-                      isUnderpaid
-                        ? "text-[#E5566C]"
-                        : isOverpaid
-                        ? "text-[#7BE495]"
-                        : "text-[#042860]"
-                    }`}
-                  >
-                    {difference > 0 ? `+${difference}` : difference} {currency}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </>
-    );
-  }
-
   return (
     <>
       {scenarioInfo}
+
+      {/* Кнопка "Додати нового учасника" (Тільки в EditMode) */}
+      {isEditMode && (
+        <div className="mb-6">
+          <button
+            onClick={onAddParticipant}
+            className="flex items-center bg-[#EBF1FF] border border-[#7B9CCA] rounded-[4px] py-[16px] px-[36px] hover:bg-[#dbe5ff]"
+          >
+            <img
+              src={addIcon}
+              alt="Add"
+              className="w-[20px] h-[20px] mr-[20px]"
+            />
+            <span className="text-[#042860] text-[18px] font-medium">
+              Додати нового учасника
+            </span>
+          </button>
+        </div>
+      )}
+
       <table className="w-full border-collapse border border-[#8A9CCB] table-fixed">
         <thead className="bg-[#B6CDFF] text-center text-[14px] text-[#021024] font-semibold">
           <tr>
             <th className="p-3 border border-[#8A9CCB]">Учасники чеку</th>
-            <th className="p-3 border border-[#8A9CCB]">
-              Сума, яку має сплатити
-            </th>
-            <th className="p-3 border border-[#8A9CCB]">Сплачено</th>
-            <th className="p-3 border border-[#8A9CCB]">Залишок боргу</th>
+            {/* Колонки залежать від сценарію */}
+            {scenario === "спільні витрати" ? (
+              <>
+                <th className="p-3 border border-[#8A9CCB]">
+                  Сума, яку витратив
+                </th>
+                <th className="p-3 border border-[#8A9CCB]">
+                  Сума, яку має сплатити
+                </th>
+                <th className="p-3 border border-[#8A9CCB]">Вже сплатив</th>
+                <th className="p-3 border border-[#8A9CCB]">Різниця</th>
+              </>
+            ) : (
+              <>
+                <th className="p-3 border border-[#8A9CCB]">
+                  Сума, яку має сплатити
+                </th>
+                <th className="p-3 border border-[#8A9CCB]">Сплачено</th>
+                <th className="p-3 border border-[#8A9CCB]">Залишок боргу</th>
+              </>
+            )}
+            {/* Колонка видалення (Тільки в EditMode) */}
+            {isEditMode && (
+              <th className="p-3 border border-[#8A9CCB] w-[60px]"></th>
+            )}
           </tr>
         </thead>
         <tbody className="text-left text-[18px] text-[#042860]">
           {filteredParticipants.map((p) => {
+            // Розрахунки для відображення
+            const difference = (p.paidAmount || 0) - (p.assignedAmount || 0);
+            const isOverpaid = difference > 0;
+            const isUnderpaid = difference < 0;
             const debt = (p.assignedAmount || 0) - (p.balance || 0);
+
+            const isCurrentUser =
+              p.userId.toString() === currentUserId?.toString();
+
             return (
               <tr key={p.userId}>
+                {/* Ім'я */}
                 <td className="p-3 border border-[#8A9CCB] font-semibold">
-                  {formatName(
-                    p.userId,
-                    p.userName,
-                    p.userId.toString() === currentUserId
-                  )}
+                  {formatName(p.userId, p.userName, isCurrentUser)}
                 </td>
-                <td className="p-3 border border-[#8A9CCB]">
-                  {p.assignedAmount || 0} {currency}
-                </td>
-                <td className="p-3 border border-[#8A9CCB]">
-                  {p.balance || 0} {currency}
-                </td>
-                <td className="p-3 font-semibold border border-[#8A9CCB]">
-                  {debt} {currency}
-                </td>
+
+                {scenario === "спільні витрати" ? (
+                  <>
+                    {/* Спільні витрати: Редагуємо 'paidAmount' (Сума, яку витратив) */}
+                    <td className="p-3 border border-[#8A9CCB]">
+                      {isEditMode ? (
+                        <input
+                          type="number"
+                          value={p.paidAmount || 0}
+                          onChange={(e) =>
+                            onParticipantChange(
+                              p.userId,
+                              "paidAmount",
+                              e.target.value
+                            )
+                          }
+                          className="w-full bg-transparent border-b border-[#042860] focus:outline-none"
+                        />
+                      ) : (
+                        `${p.paidAmount || 0} ${currency}`
+                      )}
+                    </td>
+                    <td className="p-3 border border-[#8A9CCB]">
+                      {p.assignedAmount || 0} {currency}
+                    </td>
+                    <td className="p-3 border border-[#8A9CCB]">
+                      {p.balance || 0} {currency}
+                    </td>
+                    <td
+                      className={`p-3 font-semibold text-[18px] border border-[#8A9CCB] ${
+                        isUnderpaid
+                          ? "text-[#E5566C]"
+                          : isOverpaid
+                          ? "text-[#7BE495]"
+                          : "text-[#042860]"
+                      }`}
+                    >
+                      {difference > 0 ? `+${difference}` : difference}{" "}
+                      {currency}
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    {/* Інші сценарії: Редагуємо 'assignedAmount' (Сума, яку має сплатити) */}
+                    <td className="p-3 border border-[#8A9CCB]">
+                      {isEditMode && scenario === "індивідуальні суми" ? (
+                        <input
+                          type="number"
+                          value={p.assignedAmount || 0}
+                          onChange={(e) =>
+                            onParticipantChange(
+                              p.userId,
+                              "assignedAmount",
+                              e.target.value
+                            )
+                          }
+                          className="w-full bg-transparent border-b border-[#042860] focus:outline-none"
+                        />
+                      ) : (
+                        `${p.assignedAmount || 0} ${currency}`
+                      )}
+                    </td>
+                    <td className="p-3 border border-[#8A9CCB]">
+                      {p.balance || 0} {currency}
+                    </td>
+                    <td className="p-3 font-semibold border border-[#8A9CCB]">
+                      {debt} {currency}
+                    </td>
+                  </>
+                )}
+
+                {/* Кнопка Видалення */}
+                {isEditMode && (
+                  <td className="p-3 border border-[#8A9CCB] text-center">
+                    <button
+                      onClick={() => onDeleteParticipant(p.userId)}
+                      title="Видалити учасника"
+                    >
+                      <img
+                        src={deleteIcon}
+                        alt="Del"
+                        className="w-[20px] h-[20px] mx-auto"
+                      />
+                    </button>
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -485,6 +611,8 @@ const ParticipantsTable = ({
     </>
   );
 };
+
+// --- PAYMENT COMPONENT ---
 
 const PaymentSection = ({
   check,
@@ -626,6 +754,8 @@ const PaymentSection = ({
   );
 };
 
+// --- MAIN COMPONENT ---
+
 export default function CheckDetailPage() {
   const { ebillId } = useParams();
   const navigate = useNavigate();
@@ -634,6 +764,10 @@ export default function CheckDetailPage() {
   const [error, setError] = useState(null);
   const [users, setUsers] = useState({});
   const [organizerUser, setOrganizerUser] = useState(null);
+
+  // Стан для редагування
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedCheck, setEditedCheck] = useState(null);
 
   const currentUserId = getIdFromJWT();
 
@@ -699,11 +833,73 @@ export default function CheckDetailPage() {
     }
   }, [ebillId, currentUserId]);
 
+  // --- Хендлери Редагування ---
+
+  const handleEnableEditMode = () => {
+    setIsEditMode(true);
+    // Глибока копія чеку для редагування
+    setEditedCheck(JSON.parse(JSON.stringify(check)));
+  };
+
+  const handleSave = () => {
+    console.log("Імітація: Збереження змін...", editedCheck);
+    // Тут буде запит до API (updateCheck)
+    setCheck(editedCheck); // Оновлюємо локальний стан
+    setIsEditMode(false);
+  };
+
+  const handleCancel = () => {
+    setIsEditMode(false);
+    setEditedCheck(null);
+  };
+
+  // Обробники змін полів
+  const handleTitleChange = (val) =>
+    setEditedCheck({ ...editedCheck, name: val });
+  const handleDescriptionChange = (val) =>
+    setEditedCheck({ ...editedCheck, description: val });
+  const handleOrganizerExpenseChange = (val) =>
+    setEditedCheck({ ...editedCheck, amountOfDept: val });
+
+  const handleParticipantChange = (userId, field, val) => {
+    const updatedParticipants = editedCheck.participants.map((p) =>
+      p.userId === userId ? { ...p, [field]: val } : p
+    );
+    setEditedCheck({ ...editedCheck, participants: updatedParticipants });
+  };
+
+  const handleAddParticipant = () => {
+    const newId = Date.now(); // Тимчасовий ID
+    const newParticipant = {
+      userId: newId,
+      userName: "Новий учасник",
+      isAdminRights: false,
+      assignedAmount: 0,
+      paidAmount: 0,
+      balance: 0,
+    };
+    setEditedCheck({
+      ...editedCheck,
+      participants: [...editedCheck.participants, newParticipant],
+    });
+  };
+
+  const handleDeleteParticipant = (userId) => {
+    const updatedParticipants = editedCheck.participants.filter(
+      (p) => p.userId !== userId
+    );
+    setEditedCheck({ ...editedCheck, participants: updatedParticipants });
+  };
+
+  // --- Рендер ---
+
+  const checkToRender = isEditMode ? editedCheck : check;
+
   const currentUserParticipant = useMemo(() => {
     return check?.participants.find(
       (p) => p.userId.toString() === currentUserId?.toString()
     );
-  }, [check, currentUserId]);
+  }, [checkToRender, currentUserId]);
 
   const isUserOrganizer = currentUserParticipant?.isAdminRights || false;
 
@@ -748,34 +944,64 @@ export default function CheckDetailPage() {
       <div className="bg-white rounded-[24px] px-10 pt-7 pb-9">
         {/* Компонент 1: Заголовок */}
         <div className="mb-5">
-          <CheckHeader title={check.name} isUserOrganizer={isUserOrganizer} />
+          <CheckHeader
+            title={checkToRender.name}
+            isUserOrganizer={isUserOrganizer}
+            isEditMode={isEditMode}
+            onEditClick={handleEnableEditMode}
+            onTitleChange={handleTitleChange}
+          />
         </div>
         {/* Компонент 2: Інформаційні блоки */}
         <div className="mb-6">
           <CheckInfoBlocks
-            check={check}
+            check={checkToRender}
             currentUserId={currentUserId}
             isUserOrganizer={isUserOrganizer}
             organizerUser={organizerUser}
+            isEditMode={isEditMode}
+            onDescriptionChange={handleDescriptionChange}
+            onOrganizerExpenseChange={handleOrganizerExpenseChange}
           />
         </div>
         {/* Компонент 3: Таблиця */}
         <ParticipantsTable
-          scenario={check.scenario}
-          participants={check.participants}
+          scenario={checkToRender.scenario}
+          participants={checkToRender.participants}
           currentUserId={currentUserId}
           organizerId={organizerUser?.userId}
           scenarioMarginBottom="mb-6"
-          amountOfDept={check.amountOfDept}
-          currency={check.currency}
+          amountOfDept={checkToRender.amountOfDept}
+          currency={checkToRender.currency}
+          isEditMode={isEditMode}
+          onParticipantChange={handleParticipantChange}
+          onAddParticipant={handleAddParticipant}
+          onDeleteParticipant={handleDeleteParticipant}
         />
         {/* Компонент 4: Логіка оплати */}
-        <PaymentSection
-          check={check}
-          currentUserData={currentUserParticipant}
-          currency={check.currency}
-          isUserOrganizer={isUserOrganizer}
-        />
+        {isEditMode ? (
+          <div className="flex justify-center gap-6 mt-10">
+            <button
+              onClick={handleSave}
+              className="bg-[#456DB4] text-white text-[20px] font-semibold rounded-[16px] py-[20px] w-[226px] hover:bg-[#355a9e]"
+            >
+              Зберегти зміни
+            </button>
+            <button
+              onClick={handleCancel}
+              className="bg-[#456DB4] text-white text-[20px] font-semibold rounded-[16px] py-[20px] w-[226px] hover:bg-[#355a9e]"
+            >
+              Скасувати
+            </button>
+          </div>
+        ) : (
+          <PaymentSection
+            check={checkToRender}
+            currentUserData={currentUserParticipant}
+            currency={checkToRender.currency}
+            isUserOrganizer={isUserOrganizer}
+          />
+        )}
       </div>
     </div>
   );
