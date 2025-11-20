@@ -5,38 +5,39 @@ import returnBackIcon from "../assets/icons/returnback.png";
 import commentsIcon from "../assets/icons/commentsIcon.png";
 import historyIcon from "../assets/icons/historyIcon.png";
 import settingsIcon from "../assets/icons/settingsIcon.png";
+import addIcon from "../assets/icons/add.png";
+import deleteIcon from "../assets/icons/trash.png";
 import { checksAPI } from "../api/checks";
 import { usersAPI } from "../api/users";
 import { getIdFromJWT } from "../utils/jwt";
 
+// --- ДОПОМІЖНІ ФУНКЦІЇ ---
+
 const calculateCheckStatus = (check) => {
   const { scenario, participants } = check;
-  
 
   let participantsToCheck = participants;
-  
+
   if (scenario === "рівний розподіл" || scenario === "індивідуальні суми") {
-    participantsToCheck = participants.filter(p => !p.isAdminRights);
+    participantsToCheck = participants.filter((p) => !p.isAdminRights);
   }
-  
+
   let hasAnyPayment = false;
   let allFullyPaid = true;
-  
-  participantsToCheck.forEach(participant => {
+
+  participantsToCheck.forEach((participant) => {
     const balance = participant.balance || 0;
     const assignedAmount = participant.assignedAmount || 0;
-    
-    
+
     if (balance > 0) {
       hasAnyPayment = true;
     }
-    
+
     if (balance < assignedAmount) {
       allFullyPaid = false;
     }
   });
-  
-  
+
   let status;
   if (allFullyPaid && hasAnyPayment) {
     status = "погашений";
@@ -45,19 +46,130 @@ const calculateCheckStatus = (check) => {
   } else {
     status = "непогашений";
   }
-  
+
   return status;
 };
 
+// --- КОМПОНЕНТИ МОДАЛОК ---
+
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-[4px] p-8 flex flex-col items-center shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-[24px] text-[#021024] font-bold mb-8 text-center max-w-[300px]">
+          Ви впевнені, що хочете видалити чек?
+        </h3>
+        <div className="flex gap-5">
+          <button
+            onClick={onConfirm}
+            className="bg-[#456DB4] text-white text-[20px] font-semibold py-3 px-10 rounded-[16px] hover:bg-[#d63f56]"
+          >
+            Так
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-[#B6CDFF] text-[#042860] text-[20px] font-semibold py-3 px-10 rounded-[16px] hover:bg-[#a4c0ff]"
+          >
+            Ні
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SettingsMenu = ({ isOpen, onClose, onAction }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose}></div>
+
+      <div className="absolute top-[110%] right-0 bg-white rounded-[8px] shadow-xl z-50 overflow-hidden w-max">
+        {/* Заголовок меню */}
+        <div className="bg-[#B6CDFF] py-[16px] px-[48px]">
+          <p className="text-[20px] text-[#021024] font-bold whitespace-nowrap">
+            Налаштування чеку
+          </p>
+        </div>
+
+        {/* Опції */}
+        <div className="flex flex-col">
+          <button
+            onClick={() => onAction("edit")}
+            className="py-[20px] px-[20px] text-[18px] text-[#042860] font-medium hover:bg-gray-50 transition-colors"
+          >
+            Редагувати чек
+          </button>
+
+          {/* Лінія-розділювач */}
+          <div className="h-[1px] bg-[#D1D4E8] mx-[20px]"></div>
+
+          <button
+            onClick={() => onAction("permissions")}
+            className="py-[20px] px-[20px] text-[18px] text-[#042860] font-medium hover:bg-gray-50 transition-colors"
+          >
+            Надати права учасникам
+          </button>
+
+          {/* Лінія-розділювач */}
+          <div className="h-[1px] bg-[#D1D4E8] mx-[20px]"></div>
+
+          <button
+            onClick={() => onAction("delete")}
+            className="py-[20px] px-[20px] text-[18px] text-[#E5566C] font-medium hover:bg-gray-50 transition-colors"
+          >
+            Видалити чек
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// --- HEADER COMPONENT ---
+
 const CheckHeader = ({ title, isUserOrganizer }) => {
   const navigate = useNavigate();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleBack = () => {
     navigate("/checks");
   };
 
+  const toggleSettings = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
+  const handleMenuAction = (action) => {
+    setIsSettingsOpen(false);
+
+    if (action === "edit") {
+      console.log("Режим редагування...");
+    } else if (action === "permissions") {
+      console.log("Модальне вікно прав...");
+    } else if (action === "delete") {
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    console.log("Чек видалено!");
+    setIsDeleteModalOpen(false);
+    navigate("/checks");
+  };
+
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex items-center z-10">
       <button
         onClick={handleBack}
         className="absolute left-0 text-3xl text-[#052659]"
@@ -76,7 +188,7 @@ const CheckHeader = ({ title, isUserOrganizer }) => {
       </h1>
 
       {/* Блок з іконками */}
-      <div className="absolute right-0 flex items-center gap-4">
+      <div className="absolute right-0 flex items-center gap-4 ">
         <button title="Коментарі">
           <img
             src={commentsIcon}
@@ -88,18 +200,33 @@ const CheckHeader = ({ title, isUserOrganizer }) => {
           <img src={historyIcon} alt="Історія" className="w-[28px] h-[28px]" />
         </button>
         {isUserOrganizer && (
-          <button title="Налаштування чеку">
-            <img
-              src={settingsIcon}
-              alt="Налаштування"
-              className="w-[28px] h-[28px]"
+          <div>
+            <button title="Налаштування чеку" onClick={toggleSettings}>
+              <img
+                src={settingsIcon}
+                alt="Налаштування"
+                className="w-[28px] h-[28px] cursor-pointer"
+              />
+            </button>
+            <SettingsMenu
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              onAction={handleMenuAction}
             />
-          </button>
+          </div>
         )}
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
+
+// --- INFO BLOCKS COMPONENT ---
 
 const statusStyles = {
   активний: "bg-[#7BE495]",
@@ -125,16 +252,21 @@ const StatusTag = ({ text }) => {
   );
 };
 
-const CheckInfoBlocks = ({ check, currentUserId, isUserOrganizer, organizerUser }) => {
+const CheckInfoBlocks = ({
+  check,
+  currentUserId,
+  isUserOrganizer,
+  organizerUser,
+}) => {
   const { description, status } = check;
 
   const getOrganizerName = () => {
     if (!organizerUser) return "Завантаження...";
-    
-    const firstName = organizerUser.firstName || '';
-    const lastName = organizerUser.lastName || '';
+
+    const firstName = organizerUser.firstName || "";
+    const lastName = organizerUser.lastName || "";
     const fullName = `${firstName} ${lastName}`.trim();
-    
+
     return fullName || `Користувач ${organizerUser.userId || organizerUser.id}`;
   };
 
@@ -196,22 +328,26 @@ const ParticipantsTable = ({
   organizerId,
   scenarioMarginBottom,
   amountOfDept,
-  currency
+  currency,
 }) => {
   const formatName = (userId, name, isCurrentUser) => {
     return isCurrentUser ? `${name} (Я)` : name;
   };
 
-  const filteredParticipants = participants.filter(p => 
+  const filteredParticipants = participants.filter((p) =>
     scenario === "спільні витрати" ? true : !p.isAdminRights
   );
 
   const getScenarioDisplayName = (scenario) => {
     switch (scenario) {
-      case "рівний розподіл": return "Рівний розподіл";
-      case "індивідуальні суми": return "Індивідуальні суми";
-      case "спільні витрати": return "Спільні витрати";
-      default: return scenario;
+      case "рівний розподіл":
+        return "Рівний розподіл";
+      case "індивідуальні суми":
+        return "Індивідуальні суми";
+      case "спільні витрати":
+        return "Спільні витрати";
+      default:
+        return scenario;
     }
   };
 
@@ -267,20 +403,30 @@ const ParticipantsTable = ({
               const difference = (p.paidAmount || 0) - (p.assignedAmount || 0);
               const isOverpaid = difference > 0;
               const isUnderpaid = difference < 0;
-              
+
               return (
                 <tr key={p.userId}>
                   <td className="p-3 border border-[#8A9CCB] font-semibold">
-                    {formatName(p.userId, p.userName, p.userId.toString() === currentUserId)}
+                    {formatName(
+                      p.userId,
+                      p.userName,
+                      p.userId.toString() === currentUserId
+                    )}
                   </td>
-                  <td className="p-3 border border-[#8A9CCB]">{p.paidAmount || 0} {currency}</td>
-                  <td className="p-3 border border-[#8A9CCB]">{p.assignedAmount || 0} {currency}</td>
-                  <td className="p-3 border border-[#8A9CCB]">{p.balance || 0} {currency}</td>
+                  <td className="p-3 border border-[#8A9CCB]">
+                    {p.paidAmount || 0} {currency}
+                  </td>
+                  <td className="p-3 border border-[#8A9CCB]">
+                    {p.assignedAmount || 0} {currency}
+                  </td>
+                  <td className="p-3 border border-[#8A9CCB]">
+                    {p.balance || 0} {currency}
+                  </td>
                   <td
                     className={`p-3 font-semibold text-[18px] border border-[#8A9CCB] ${
-                      isUnderpaid 
+                      isUnderpaid
                         ? "text-[#E5566C]"
-                        : isOverpaid 
+                        : isOverpaid
                         ? "text-[#7BE495]"
                         : "text-[#042860]"
                     }`}
@@ -316,10 +462,18 @@ const ParticipantsTable = ({
             return (
               <tr key={p.userId}>
                 <td className="p-3 border border-[#8A9CCB] font-semibold">
-                  {formatName(p.userId, p.userName, p.userId.toString() === currentUserId)}
+                  {formatName(
+                    p.userId,
+                    p.userName,
+                    p.userId.toString() === currentUserId
+                  )}
                 </td>
-                <td className="p-3 border border-[#8A9CCB]">{p.assignedAmount || 0} {currency}</td>
-                <td className="p-3 border border-[#8A9CCB]">{p.balance || 0} {currency}</td>
+                <td className="p-3 border border-[#8A9CCB]">
+                  {p.assignedAmount || 0} {currency}
+                </td>
+                <td className="p-3 border border-[#8A9CCB]">
+                  {p.balance || 0} {currency}
+                </td>
                 <td className="p-3 font-semibold border border-[#8A9CCB]">
                   {debt} {currency}
                 </td>
@@ -332,7 +486,12 @@ const ParticipantsTable = ({
   );
 };
 
-const PaymentSection = ({ check, currentUserData, currency, isUserOrganizer }) => {
+const PaymentSection = ({
+  check,
+  currentUserData,
+  currency,
+  isUserOrganizer,
+}) => {
   const [paymentType, setPaymentType] = useState("full");
   const [partialAmount, setPartialAmount] = useState(0);
   const [inputValue, setInputValue] = useState("");
@@ -340,12 +499,15 @@ const PaymentSection = ({ check, currentUserData, currency, isUserOrganizer }) =
 
   const userDebt = useMemo(() => {
     if (!currentUserData) return 0;
-    
+
     if (check.scenario === "спільні витрати") {
-      const difference = (currentUserData.paidAmount || 0) - (currentUserData.assignedAmount || 0);
+      const difference =
+        (currentUserData.paidAmount || 0) -
+        (currentUserData.assignedAmount || 0);
       return difference > 0 ? difference : 0;
     } else {
-      const debt = (currentUserData.assignedAmount || 0) - (currentUserData.balance || 0);
+      const debt =
+        (currentUserData.assignedAmount || 0) - (currentUserData.balance || 0);
       return debt > 0 ? debt : 0;
     }
   }, [currentUserData, check.scenario]);
@@ -394,7 +556,11 @@ const PaymentSection = ({ check, currentUserData, currency, isUserOrganizer }) =
   };
 
   const handlePayment = () => {
-    alert(`Функція оплати буде реалізована пізніше. Сума: ${paymentType === "full" ? userDebt : partialAmount} ${currency}`);
+    alert(
+      `Функція оплати буде реалізована пізніше. Сума: ${
+        paymentType === "full" ? userDebt : partialAmount
+      } ${currency}`
+    );
   };
 
   if (!shouldShowPaymentSection) {
@@ -449,7 +615,7 @@ const PaymentSection = ({ check, currentUserData, currency, isUserOrganizer }) =
 
       {/* Головна кнопка оплати */}
       <div className="w-full flex justify-center">
-        <button 
+        <button
           onClick={handlePayment}
           className="mt-10 bg-[#456DB4] text-white rounded-[20px] py-4 px-[60px] font-semibold text-lg hover:bg-blue-700"
         >
@@ -476,12 +642,16 @@ export default function CheckDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const checkData = await checksAPI.getCheckById(ebillId);
 
-        const organizerParticipant = checkData.participants.find(p => p.isAdminRights);
+        const organizerParticipant = checkData.participants.find(
+          (p) => p.isAdminRights
+        );
         if (organizerParticipant) {
-          const organizer = await usersAPI.getUserById(organizerParticipant.userId);
+          const organizer = await usersAPI.getUserById(
+            organizerParticipant.userId
+          );
           setOrganizerUser(organizer);
         }
 
@@ -495,24 +665,25 @@ export default function CheckDetailPage() {
         setUsers(usersData);
 
         const calculatedStatus = calculateCheckStatus(checkData);
-        
+
         const enrichedCheck = {
           ...checkData,
-          participants: checkData.participants.map(participant => {
+          participants: checkData.participants.map((participant) => {
             const userData = usersData[participant.userId];
-            const firstName = userData?.firstName || '';
-            const lastName = userData?.lastName || '';
+            const firstName = userData?.firstName || "";
+            const lastName = userData?.lastName || "";
             const fullName = `${firstName} ${lastName}`.trim();
-            
+
             return {
               ...participant,
-              userName: fullName || `Користувач ${participant.userId}`
+              userName: fullName || `Користувач ${participant.userId}`,
             };
           }),
           calculatedStatus: calculatedStatus,
-          currentUserPaymentStatus: checkData.participants.find(
-            p => p.userId.toString() === currentUserId?.toString()
-          )?.paymentStatus || "непогашений"
+          currentUserPaymentStatus:
+            checkData.participants.find(
+              (p) => p.userId.toString() === currentUserId?.toString()
+            )?.paymentStatus || "непогашений",
         };
 
         setCheck(enrichedCheck);
@@ -529,7 +700,9 @@ export default function CheckDetailPage() {
   }, [ebillId, currentUserId]);
 
   const currentUserParticipant = useMemo(() => {
-    return check?.participants.find((p) => p.userId.toString() === currentUserId?.toString());
+    return check?.participants.find(
+      (p) => p.userId.toString() === currentUserId?.toString()
+    );
   }, [check, currentUserId]);
 
   const isUserOrganizer = currentUserParticipant?.isAdminRights || false;
@@ -549,7 +722,7 @@ export default function CheckDetailPage() {
       <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
         <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
           <p className="text-xl text-red-600">Помилка: {error}</p>
-          <button 
+          <button
             onClick={() => navigate("/checks")}
             className="ml-4 bg-[#456DB4] text-white px-4 py-2 rounded-lg"
           >
