@@ -9,6 +9,8 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ChecksPage from "./pages/ChecksPage.jsx";
 import CheckDetailPage from "./pages/CheckDetailPage";
+import MyNotifications from "./pages/MyNotifications.jsx";
+
 
 import MyFriends from "./pages/MyFriends.jsx";
 
@@ -36,6 +38,7 @@ export default function App() {
       <Route element={<LayoutPR />}>
         <Route path="profile" element={<ProfilePage />} />
         <Route path="friends" element={<MyFriends />} />
+        <Route path="messages" element={<MyNotifications />} />
 
         {/* додаткові роути з e-bills */}
         <Route path="checks">
