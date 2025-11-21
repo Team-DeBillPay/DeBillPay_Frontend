@@ -7,8 +7,11 @@ import historyIcon from "../assets/icons/historyIcon.png";
 import settingsIcon from "../assets/icons/settingsIcon.png";
 import addIcon from "../assets/icons/add.png";
 import deleteIcon from "../assets/icons/trash.png";
+import checkIcon from "../assets/icons/checkIcon.png";
+import crossIcon from "../assets/icons/add.png";
 import { checksAPI } from "../api/checks";
 import { usersAPI } from "../api/users";
+import { contactsAPI } from "../api/contacts";
 import { getIdFromJWT } from "../utils/jwt";
 
 // --- ДОПОМІЖНІ ФУНКЦІЇ ---
@@ -48,6 +51,86 @@ const calculateCheckStatus = (check) => {
   }
 
   return status;
+};
+
+// --- КОМПОНЕНТ FRIEND ITEM ---
+
+const FriendItem = ({ avatar, name, isSelected, variant, onToggle }) => {
+  return (
+    <div className="bg-[#B6CDFF] py-[16px] px-[24px] rounded-[16px] flex items-center justify-between w-full mb-[16px] last:mb-0">
+      <div className="flex items-center">
+        <img
+          src={avatar || iconProfile}
+          alt={name}
+          className="w-[36px] h-[36px] rounded-full object-cover"
+        />
+        <span className="ml-[20px] text-[#042860] text-[18px] font-medium truncate max-w-[180px]">
+          {name}
+        </span>
+      </div>
+
+      <div onClick={onToggle} className="cursor-pointer">
+        {variant === "rights" ? (
+          // Варіант для прав: Перемикач (Хрестик | Галочка)
+          <div className="w-[65px] h-[24px] bg-[#7EAEF4] border border-[#466FB7] rounded-[4px] flex overflow-hidden">
+            {/* Хрестик — НЕ вибрано */}
+            <div
+              className={`w-[33px] h-full flex items-center justify-center transition-all
+      ${
+        !isSelected
+          ? "bg-[#EDF3FF] border border-[#466FB7] rounded-[4px]"
+          : "bg-transparent"
+      }
+    `}
+            >
+              <img
+                src={crossIcon}
+                alt="Cross"
+                className={`w-[12px] h-[12px] rotate-45
+        ${!isSelected ? "opacity-100" : "opacity-40"}
+      `}
+              />
+            </div>
+
+            {/* Галочка — ВИБРАНО */}
+            <div
+              className={`w-[32px] h-full flex items-center justify-center transition-all
+      ${
+        isSelected
+          ? "bg-[#EDF3FF] border border-[#466FB7] rounded-[4px]"
+          : "bg-[#7EAEF4]"
+      }
+    `}
+            >
+              <img
+                src={checkIcon}
+                alt="Check"
+                className={`w-[12px] h-[12px]
+        ${isSelected ? "opacity-100" : "opacity-40"}
+      `}
+              />
+            </div>
+          </div>
+        ) : (
+          // Варіант для додавання: Плюсик або Галочка
+          <div
+            className={`w-[24px] h-[24px] flex items-center justify-center rounded-full border ${
+              isSelected
+                ? "border-[#466FB7] bg-[#EDF3FF]"
+                : "border-[#466FB7] bg-white"
+            }`}
+            onClick={() => setIsSelected(!isSelected)}
+          >
+            {isSelected ? (
+              <img src={checkIcon} alt="Check" className="w-[14px] h-[14px]" />
+            ) : (
+              <img src={addIcon} alt="Add" className="w-[14px] h-[14px]" />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 // --- КОМПОНЕНТИ МОДАЛОК ---
@@ -135,6 +218,219 @@ const SettingsMenu = ({ isOpen, onClose, onAction }) => {
   );
 };
 
+const GiveRightsModal = ({ isOpen, onClose, participants, onSave }) => {
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  // При відкритті можна встановити тих, хто вже має права
+  useEffect(() => {
+    if (isOpen) {
+      const admins = participants
+        .filter((p) => p.isAdminRights)
+        .map((p) => p.userId);
+      setSelectedIds(admins);
+    }
+  }, [isOpen, participants]);
+
+  const handleToggle = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((sid) => sid !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === participants.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(participants.map((p) => p.userId));
+    }
+  };
+
+  const isAllSelected =
+    participants.length > 0 && selectedIds.length === participants.length;
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-[4px] overflow-hidden w-[402px] flex flex-col items-center shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-[#B6CDFF] py-[16px] w-full text-center flex flex-col items-center">
+          <h3 className="text-[20px] text-[#021024] font-bold w-[240px]">
+            Оберіть учасників чеку, яким хочете надати права Організатора
+          </h3>
+        </div>
+
+        {/* Content */}
+        <div className="w-full px-[32px] pt-[32px] pb-[40px] flex flex-col items-center">
+          {/* Select All Checkbox */}
+          <div
+            className="w-full flex items-center mb-[24px] cursor-pointer"
+            onClick={handleSelectAll}
+          >
+            <div
+              className={`w-[20px] h-[20px] rounded-[4px] border flex items-center justify-center ${
+                isAllSelected
+                  ? "bg-white border-[#456DB4]"
+                  : "border-[#456DB4] bg-white"
+              }`}
+            >
+              {isAllSelected && (
+                <img
+                  src={checkIcon}
+                  alt="check"
+                  className="w-[14px] h-[14px]"
+                />
+              )}
+            </div>
+            <span className="ml-[16px] text-[#042860] text-[18px] font-medium">
+              Обрати усіх
+            </span>
+          </div>
+
+          {/* List */}
+          <div className="w-full max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+            {participants.length === 0 ? (
+              <p className="text-center text-[#979AB7] py-4">
+                Немає інших учасників для надання прав.
+              </p>
+            ) : (
+              participants.map((p) => (
+                <FriendItem
+                  key={p.userId}
+                  name={p.userName}
+                  avatar={iconProfile} // Тут можна підставити p.avatarUrl якщо є
+                  isSelected={selectedIds.includes(p.userId)}
+                  variant="rights"
+                  onToggle={() => handleToggle(p.userId)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Button */}
+          <button
+            onClick={() => onSave(selectedIds)}
+            className="mt-[32px] w-[206px] h-[54px] bg-[#456DB4] text-white text-[20px] font-semibold rounded-[16px] hover:bg-[#355a9e] flex items-center justify-center"
+          >
+            Зберегти
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AddMembersModal = ({ isOpen, onClose, currentParticipants, onAdd }) => {
+  const [friends, setFriends] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const loadFriends = async () => {
+        setLoading(true);
+        try {
+          const contacts = await contactsAPI.getContacts();
+          // Формуємо список друзів
+          const friendsList = contacts.map((contact) => ({
+            id: contact.friend.userId,
+            name: `${contact.friend.firstName} ${contact.friend.lastName}`,
+            avatar: iconProfile, // Або URL з бекенду
+          }));
+
+          // Фільтруємо тих, хто вже в чеку
+          const currentIds = currentParticipants.map((p) =>
+            p.userId.toString()
+          );
+          const availableFriends = friendsList.filter(
+            (f) => !currentIds.includes(f.id.toString())
+          );
+
+          setFriends(availableFriends);
+        } catch (error) {
+          console.error("Помилка завантаження друзів:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadFriends();
+      setSelectedIds([]); // Скидаємо вибір при відкритті
+    }
+  }, [isOpen, currentParticipants]);
+
+  const handleToggle = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((sid) => sid !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-[4px] overflow-hidden w-[402px] flex flex-col items-center shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-[#B6CDFF] py-[16px] w-full text-center flex flex-col items-center">
+          <h3 className="text-[20px] text-[#021024] font-bold w-[200px]">
+            Оберіть друзів, яких хочете додати до чеку
+          </h3>
+        </div>
+
+        {/* Content */}
+        <div className="w-full px-[32px] pt-[32px] pb-[40px] flex flex-col items-center">
+          {loading ? (
+            <p className="text-[#042860] my-10">Завантаження...</p>
+          ) : friends.length === 0 ? (
+            <p className="text-[#979AB7] my-10 text-center">
+              Усі ваші друзі вже додані до чеку або список порожній.
+            </p>
+          ) : (
+            <div className="w-full max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+              {friends.map((friend) => (
+                <FriendItem
+                  key={friend.id}
+                  name={friend.name}
+                  avatar={friend.avatar}
+                  isSelected={selectedIds.includes(friend.id)}
+                  variant="add"
+                  onToggle={() => handleToggle(friend.id)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Button */}
+          <button
+            onClick={() =>
+              onAdd(friends.filter((f) => selectedIds.includes(f.id)))
+            }
+            className="mt-[32px] w-[206px] h-[54px] bg-[#456DB4] text-white text-[20px] font-semibold rounded-[16px] hover:bg-[#355a9e] flex items-center justify-center disabled:bg-gray-400"
+            disabled={selectedIds.length === 0}
+          >
+            Додати
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- HEADER COMPONENT ---
 
 const CheckHeader = ({
@@ -143,6 +439,7 @@ const CheckHeader = ({
   isEditMode,
   onTitleChange,
   onEditClick,
+  onOpenPermissions,
 }) => {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -162,7 +459,7 @@ const CheckHeader = ({
     if (action === "edit") {
       onEditClick();
     } else if (action === "permissions") {
-      console.log("Модальне вікно прав...");
+      onOpenPermissions();
     } else if (action === "delete") {
       setIsDeleteModalOpen(true);
     }
@@ -768,6 +1065,8 @@ export default function CheckDetailPage() {
   // Стан для редагування
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedCheck, setEditedCheck] = useState(null);
+  const [isRightsModalOpen, setIsRightsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const currentUserId = getIdFromJWT();
 
@@ -891,6 +1190,42 @@ export default function CheckDetailPage() {
     setEditedCheck({ ...editedCheck, participants: updatedParticipants });
   };
 
+  const handleOpenPermissions = () => setIsRightsModalOpen(true);
+  const handleSaveRights = (selectedIds) => {
+    // Логіка оновлення прав
+    console.log("Нові адміністратори:", selectedIds);
+    // Тут мав би бути API запит. Імітуємо оновлення локального стану, якщо потрібно
+    // const updated = { ...check, participants: check.participants.map(p => ({...p, isAdminRights: selectedIds.includes(p.userId)})) };
+    // setCheck(updated);
+    setIsRightsModalOpen(false);
+  };
+
+  const handleOpenAddMember = () => setIsAddModalOpen(true);
+  const handleAddFriends = (newFriends) => {
+    // Логіка додавання нових учасників
+    console.log("Додано друзів:", newFriends);
+    const newParticipants = newFriends.map((f) => ({
+      userId: f.id,
+      userName: f.name,
+      isAdminRights: false,
+      assignedAmount: 0,
+      paidAmount: 0,
+      balance: 0,
+      // інші дефолтні поля
+    }));
+
+    if (isEditMode) {
+      setEditedCheck({
+        ...editedCheck,
+        participants: [...editedCheck.participants, ...newParticipants],
+      });
+    } else {
+      // Якщо це викликається не з режиму редагування (хоча кнопка тільки там)
+      // Можна додати логіку прямого додавання
+    }
+    setIsAddModalOpen(false);
+  };
+
   // --- Рендер ---
 
   const checkToRender = isEditMode ? editedCheck : check;
@@ -950,6 +1285,7 @@ export default function CheckDetailPage() {
             isEditMode={isEditMode}
             onEditClick={handleEnableEditMode}
             onTitleChange={handleTitleChange}
+            onOpenPermissions={handleOpenPermissions}
           />
         </div>
         {/* Компонент 2: Інформаційні блоки */}
@@ -975,7 +1311,7 @@ export default function CheckDetailPage() {
           currency={checkToRender.currency}
           isEditMode={isEditMode}
           onParticipantChange={handleParticipantChange}
-          onAddParticipant={handleAddParticipant}
+          onAddParticipant={handleOpenAddMember}
           onDeleteParticipant={handleDeleteParticipant}
         />
         {/* Компонент 4: Логіка оплати */}
@@ -1003,6 +1339,21 @@ export default function CheckDetailPage() {
           />
         )}
       </div>
+
+      <GiveRightsModal
+        isOpen={isRightsModalOpen}
+        onClose={() => setIsRightsModalOpen(false)}
+        participants={checkToRender.participants.filter(
+          (p) => p.userId.toString() !== currentUserId?.toString()
+        )}
+        onSave={handleSaveRights}
+      />
+      <AddMembersModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        currentParticipants={checkToRender.participants}
+        onAdd={handleAddFriends}
+      />
     </div>
   );
 }
