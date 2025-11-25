@@ -440,6 +440,7 @@ const CheckHeader = ({
   onTitleChange,
   onEditClick,
   onOpenPermissions,
+  onHistoryClick,
 }) => {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -522,11 +523,11 @@ const CheckHeader = ({
               className="w-[28px] h-[28px]"
             />
           </button>
-          <button title="Історія змін чеку">
+          <button title="Історія змін чеку" onClick={onHistoryClick}>
             <img
               src={historyIcon}
               alt="Історія"
-              className="w-[28px] h-[28px]"
+              className="w-[28px] h-[28px] cursor-pointer"
             />
           </button>
           {isUserOrganizer && (
@@ -1226,6 +1227,10 @@ export default function CheckDetailPage() {
     setIsAddModalOpen(false);
   };
 
+  const handleHistoryClick = () => {
+    navigate(`/checks/${ebillId}/history`);
+  };
+
   // --- Рендер ---
 
   const checkToRender = isEditMode ? editedCheck : check;
@@ -1286,6 +1291,7 @@ export default function CheckDetailPage() {
             onEditClick={handleEnableEditMode}
             onTitleChange={handleTitleChange}
             onOpenPermissions={handleOpenPermissions}
+            onHistoryClick={handleHistoryClick}
           />
         </div>
         {/* Компонент 2: Інформаційні блоки */}

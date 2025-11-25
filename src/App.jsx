@@ -1,6 +1,5 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-
 import Layout from "./components/layout/Layout";
 import LayoutPR from "./components/layout/LayoutPR";
 import MainPage from "./pages/MainPage.jsx";
@@ -8,10 +7,9 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ChecksPage from "./pages/ChecksPage.jsx";
-import CheckDetailPage from "./pages/CheckDetailPage";
-
+import CheckDetailPage from "./pages/CheckDetailPage.jsx";
+import CheckHistoryPage from "./pages/CheckHistoryPage.jsx";
 import MyFriends from "./pages/MyFriends.jsx";
-
 
 const NotFound = () => (
   <div className="flex justify-center items-center h-screen">
@@ -32,7 +30,7 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
 
-      {/* Окремий layout для сторінки профілю */}
+      {/* Окремий layout */}
       <Route element={<LayoutPR />}>
         <Route path="profile" element={<ProfilePage />} />
         <Route path="friends" element={<MyFriends />} />
@@ -41,6 +39,7 @@ export default function App() {
         <Route path="checks">
           <Route index element={<ChecksPage />} />
           <Route path=":ebillId" element={<CheckDetailPage />} />
+          <Route path=":ebillId/history" element={<CheckHistoryPage />} />
         </Route>
       </Route>
     </Routes>
