@@ -288,7 +288,7 @@ const FriendsPage = () => {
 
   return (
     <>
-      <div className="bg-[#B6CDFF] w-[992px] h-[904px] mt-[20px] mb-[20px] mx-auto rounded-3xl flex flex-row justify-center gap-[28px] p-[28px]">
+      <div className="bg-[#B6CDFF] w-[992px] h-[904px] mt-[20px] mb-[20px] mx-auto rounded-[32px] flex flex-row justify-center gap-[28px] p-[28px]">
         <div className="bg-white w-[454px] h-[848px] rounded-2xl relative flex flex-col">
           {viewMode === "main" ? (
             <>
