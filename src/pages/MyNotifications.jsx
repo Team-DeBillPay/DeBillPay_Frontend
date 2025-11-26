@@ -9,13 +9,13 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
   let endPage = Math.min(totalPages - 1, currentPage + 1);
 
   if (startPage > 2) {
-    pageNumbers.push("..."); 
+    pageNumbers.push("...");
   }
   for (let i = startPage; i <= endPage; i++) {
     pageNumbers.push(i);
   }
   if (endPage < totalPages - 1) {
-    pageNumbers.push("..."); 
+    pageNumbers.push("...");
   }
   if (totalPages > 1) {
     pageNumbers.push(totalPages);
@@ -27,7 +27,10 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
         const isActive = page === currentPage;
         if (page === "...") {
           return (
-            <span key={index} className="w-10 h-10 flex items-center justify-center text-[#6178C8]">
+            <span
+              key={index}
+              className="w-10 h-10 flex items-center justify-center text-[#6178C8]"
+            >
               ...
             </span>
           );
@@ -49,11 +52,18 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
     </div>
   );
 };
+
 const parseDate = (dateStr) => {
   const [time, date] = dateStr.split(" ");
   const [hours, minutes] = time.split(":");
   const [day, month, year] = date.split(".");
-  return new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+  return new Date(
+    2000 + parseInt(year),
+    parseInt(month) - 1,
+    parseInt(day),
+    parseInt(hours),
+    parseInt(minutes)
+  );
 };
 
 const initialNotificationsData = [
@@ -68,34 +78,42 @@ const initialNotificationsData = [
   { id: 9, type: "comment_added", title: 'Новий коментар від Чорного: "Дякую!"', date: "13:00 29.10.25", isRead: true },
   { id: 10, type: "expense_added", title: 'Додано витрату "Квитки" у групу "Кіно"', date: "12:00 28.10.25", isRead: true },
 ];
+
 const NotificationBlock = ({ notification, onMarkAsRead, onAction }) => {
   const { id, type, title, date, isRead } = notification;
+
   const titleColor = isRead ? "text-[#495266]" : "text-black";
   const dateColor = isRead ? "text-[#4B6AA0]" : "text-[#042860]";
+
   const handleMarkReadClick = () => {
     if (!isRead) onMarkAsRead(id);
   };
+
   const handleActionClick = (action) => {
     onAction(id, action);
   };
+
   const isActionableInvite = ["friend_invite", "group_invite"].includes(type);
+
   const renderBottomContent = () => {
     if (isActionableInvite) {
       if (isRead) {
-        return <span className="text-[18px] font-semibold text-[#495266]" style={{ marginRight: "28px" }}>Прочитано</span>;
+        return (
+          <span className="text-[18px] font-semibold text-[#495266] mr-[28px]">
+            Прочитано
+          </span>
+        );
       } else {
         return (
-          <div className="flex" style={{ marginRight: "20px" }}>
+          <div className="flex mr-[20px]">
             <button
-              className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center"
-              style={{ marginLeft: "160px" }}
+              className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center ml-[160px]"
               onClick={() => handleActionClick("accept")}
             >
               Прийняти
             </button>
             <button
-              className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center"
-              style={{ marginLeft: "12px", marginRight: "0px" }}
+              className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center ml-[12px]"
               onClick={() => handleActionClick("reject")}
             >
               Відхилити
@@ -107,28 +125,37 @@ const NotificationBlock = ({ notification, onMarkAsRead, onAction }) => {
       if (!isRead) {
         return (
           <button
-            className="w-[212px] h-[38px] bg-[#042860] text-white text-[16px] font-semibold rounded-[12px]"
-            style={{ marginLeft: "192px", marginRight: "20px" }}
+            className="w-[212px] h-[38px] bg-[#042860] text-white text-[16px] font-semibold rounded-[12px] ml-[192px] mr-[20px]"
             onClick={handleMarkReadClick}
           >
             Позначити як прочитане
           </button>
         );
       } else {
-        return <span className="text-[18px] font-semibold text-[#495266]" style={{ marginRight: "28px" }}>Прочитано</span>;
+        return (
+          <span className="text-[18px] font-semibold text-[#495266] mr-[28px]">
+            Прочитано
+          </span>
+        );
       }
     }
   };
 
   return (
     <div className="w-[424px] h-[134px] bg-[#B6CDFF] rounded-[16px] flex flex-col justify-between p-0 m-0 shrink-0">
-      <div className="flex justify-between" style={{ marginTop: "20px", marginLeft: "28px", marginRight: "28px" }}>
-        <p className={`text-[18px] text-left font-semibold ${titleColor} line-clamp-2 leading-tight`}>
+      <div className="flex justify-between mt-[20px] ml-[28px] mr-[28px]">
+        <p
+          className={`text-[18px] text-left font-semibold ${titleColor} line-clamp-2 leading-tight`}
+        >
           {title}
         </p>
-        <span className={`text-[14px] font-normal ${dateColor} flex-shrink-0 ml-2`}>{date}</span>
+        <span
+          className={`text-[14px] font-normal ${dateColor} flex-shrink-0 ml-2`}
+        >
+          {date}
+        </span>
       </div>
-      <div className="flex justify-end items-center" style={{ marginBottom: "20px" }}>
+      <div className="flex justify-end items-center mb-[20px]">
         {renderBottomContent()}
       </div>
     </div>
@@ -137,92 +164,118 @@ const NotificationBlock = ({ notification, onMarkAsRead, onAction }) => {
 
 export default function MyNotifications() {
   const { updateUnreadCount } = useOutletContext();
+
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem("myNotifications_v3");
     if (saved) {
-        return JSON.parse(saved);
+      return JSON.parse(saved);
     }
     return initialNotificationsData;
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; 
+  const itemsPerPage = 8;
 
   useEffect(() => {
     localStorage.setItem("myNotifications_v3", JSON.stringify(notifications));
-    const currentUnreadCount = notifications.filter(n => !n.isRead).length;
+    const currentUnreadCount = notifications.filter((n) => !n.isRead).length;
     updateUnreadCount(currentUnreadCount);
   }, [notifications, updateUnreadCount]);
+
   const sortedNotifications = useMemo(() => {
     return [...notifications].sort((a, b) => {
       return parseDate(b.date) - parseDate(a.date);
     });
   }, [notifications]);
+
   const currentNotifications = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return sortedNotifications.slice(start, end);
   }, [sortedNotifications, currentPage, itemsPerPage]);
+
   const totalPages = Math.ceil(sortedNotifications.length / itemsPerPage);
+
   const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, isRead: true } : n)
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
+
   const handleAction = (id, action) => {
     console.log(`Notification ID: ${id}, Action: ${action}`);
-    const notificationToMark = notifications.find(n => n.id === id);
+    const notificationToMark = notifications.find((n) => n.id === id);
     if (notificationToMark && !notificationToMark.isRead) {
       markAsRead(id);
     }
   };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
+
   const column1 = currentNotifications.filter((_, index) => index % 2 === 0);
   const column2 = currentNotifications.filter((_, index) => index % 2 !== 0);
+
   const desiredMarginTop = 20;
+
   return (
     <div
-      className="bg-[#B6CDFF] rounded-[32px] mx-auto flex justify-center items-start" 
-      style={{ width: "992px", height: "842px", marginTop: `${desiredMarginTop}px`, marginBottom: "44px" }}
+      className="
+        bg-[#B6CDFF] rounded-[32px] mx-auto flex justify-center items-start
+        w-[992px] h-[842px] mt-[20px] mb-[44px]
+      "
     >
       <div
-        className="bg-white rounded-[16px] flex flex-col items-center relative"
-        style={{ width: "936px", height: "779px", paddingTop: "28px", paddingBottom: "28px", marginTop: "28px" }}
+        className="
+          bg-white rounded-[16px] flex flex-col items-center relative
+          w-[936px] h-[779px] pt-[28px] pb-[28px] mt-[28px]
+        "
       >
-        <h1 className="text-[32px] font-semibold text-[#021024] text-center" style={{ marginBottom: "28px" }}>
+        <h1 className="text-[32px] font-semibold text-[#021024] text-center mb-[28px]">
           Мої повідомлення
         </h1>
+
         <div className="flex-grow flex justify-center gap-[8px] w-full">
-           {sortedNotifications.length === 0 ? (
-              <div className="mt-[60px] flex-1 flex flex-col justify-start items-center text-center px-4">
-                <p className="text-[#4B6C9A] text-[18px]">
-                  Поки що у Вас немає жодного повідомлення...
-                </p>
+          {sortedNotifications.length === 0 ? (
+            <div className="mt-[60px] flex-1 flex flex-col justify-start items-center text-center px-4">
+              <p className="text-[#4B6C9A] text-[18px]">
+                Поки що у Вас немає жодного повідомлення...
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-[8px]">
+                {column1.map((n) => (
+                  <NotificationBlock
+                    key={n.id}
+                    notification={n}
+                    onMarkAsRead={markAsRead}
+                    onAction={handleAction}
+                  />
+                ))}
               </div>
-           ) : (
-             <>
-                <div className="flex flex-col gap-[8px]">
-                  {column1.map((n) => (
-                    <NotificationBlock key={n.id} notification={n} onMarkAsRead={markAsRead} onAction={handleAction} />
-                  ))}
-                </div>
-                <div className="flex flex-col gap-[8px]">
-                  {column2.map((n) => (
-                    <NotificationBlock key={n.id} notification={n} onMarkAsRead={markAsRead} onAction={handleAction} />
-                  ))}
-                </div>
-             </>
-           )}
+              <div className="flex flex-col gap-[8px]">
+                {column2.map((n) => (
+                  <NotificationBlock
+                    key={n.id}
+                    notification={n}
+                    onMarkAsRead={markAsRead}
+                    onAction={handleAction}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
+
         {totalPages > 1 && (
           <div className="mt-4">
-             <Pagination
-                totalPages={totalPages}
-                currentPage={currentPage}
-                onPageChange={handlePageChange}
-             />
+            <Pagination
+              totalPages={totalPages}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+            />
           </div>
         )}
       </div>
