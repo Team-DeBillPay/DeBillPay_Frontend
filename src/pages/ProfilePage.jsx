@@ -6,6 +6,7 @@ import { getIdFromJWT, getJWT } from "../utils/jwt";
 import iconProfile from "../assets/icons/iconProfile.png";
 import iconClosed from "../assets/icons/closed.png";
 import iconActive from "../assets/icons/active.png";
+import Loader from "../components/Reuse/Loader";
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -71,7 +72,6 @@ export default function ProfilePage() {
       const checksData = await checksAPI.getAllChecks();
       const currentUserId = getIdFromJWT();
       
-      // Фильтруем чеки, где пользователь является организатором (isAdminRights: true)
       const organizedChecks = checksData.filter(check => {
         const userParticipant = check.participants?.find(
           participant => participant.userId.toString() === currentUserId
@@ -165,8 +165,8 @@ export default function ProfilePage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt-token');
-    navigate('/');
+    localStorage.removeItem("jwt-token");
+    navigate("/");
   };
 
   const handleCheckDetails = (checkId) => {
@@ -204,17 +204,17 @@ export default function ProfilePage() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('uk-UA', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return date.toLocaleDateString("uk-UA", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
   if (isLoading && !isEditing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-[#021024] text-[24px]">Завантаження...</div>
+        <Loader text="Завантаження сторінки..." />
       </div>
     );
   }
@@ -415,7 +415,7 @@ export default function ProfilePage() {
               <div className="h-full overflow-y-auto pr-[12px] scrollbar-thin scrollbar-thumb-[#456DB4]/60 scrollbar-track-transparent hover:scrollbar-thumb-[#2B2A3D]">
                 {isChecksLoading ? (
                   <div className="flex items-center justify-center h-32">
-                    <div className="text-[#021024] text-[16px]">Завантаження чеків...</div>
+                    <Loader text="Завантаження чеків..." />
                   </div>
                 ) : userChecks.length === 0 ? (
                   <div className="flex items-center justify-center h-32">

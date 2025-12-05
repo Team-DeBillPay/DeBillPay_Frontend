@@ -1,8 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { notificationsAPI } from "../api/notifications";
+import Loader from "../components/Reuse/Loader.jsx";
+
 
 const Pagination = ({ totalPages, currentPage, onPageChange }) => {
   const pageNumbers = [];
+  
+  if (totalPages === 0) return null;
+  
   pageNumbers.push(1);
 
   let startPage = Math.max(2, currentPage - 1);
@@ -53,91 +59,75 @@ const Pagination = ({ totalPages, currentPage, onPageChange }) => {
   );
 };
 
-const parseDate = (dateStr) => {
-  const [time, date] = dateStr.split(" ");
-  const [hours, minutes] = time.split(":");
-  const [day, month, year] = date.split(".");
-  return new Date(
-    2000 + parseInt(year),
-    parseInt(month) - 1,
-    parseInt(day),
-    parseInt(hours),
-    parseInt(minutes)
-  );
+const formatDate = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString().slice(-2);
+    return `${hours}:${minutes} ${day}.${month}.${year}`;
+  } catch (error) {
+    return dateString;
+  }
 };
 
-const initialNotificationsData = [
-  { id: 1, type: "comment_added", title: 'Новий коментар у чеку "Піца": "Я заплачу за напої"', date: "14:35 01.11.25", isRead: false },
-  { id: 2, type: "check_invite", title: 'Вас додали до чеку: "Вечеря в суботу"', date: "16:00 30.10.25", isRead: false },
-  { id: 3, type: "repayment_made", title: 'Білий переказав вам 200 грн за чек "Таксі"', date: "12:00 01.11.25", isRead: false },
-  { id: 4, type: "expense_added", title: 'Марія додала витрату "Продукти" (500 грн) у групу "Карпати"', date: "10:15 01.11.25", isRead: false },
-  { id: 5, type: "group_invite", title: 'Вас запросили до групи: "Подорож в гори"', date: "09:30 31.10.25", isRead: false },
-  { id: 6, type: "friend_invite", title: "Вас запросили до друзів: Ірина Афанасьєва", date: "18:20 30.10.25", isRead: true },
-  { id: 7, type: "account_created", title: "Вітаємо! Ваш акаунт успішно створено.", date: "09:00 01.01.25", isRead: true },
-  { id: 8, type: "repayment_made", title: 'Ви погасили борг у чеку "Кавуся"', date: "14:00 29.10.25", isRead: true },
-  { id: 9, type: "comment_added", title: 'Новий коментар від Чорного: "Дякую!"', date: "13:00 29.10.25", isRead: true },
-  { id: 10, type: "expense_added", title: 'Додано витрату "Квитки" у групу "Кіно"', date: "12:00 28.10.25", isRead: true },
-];
+const getNotificationTitle = (type, message) => {
+  const typeTitles = {
+    friend_invitation: "Запрошення в друзі",
+    full_payment: "Повне погашення",
+    partial_payment: "Часткове погашення",
+    added_to_ebill: "Додано до чеку",
+    welcome: "Вітаємо!",
+  };
 
-const NotificationBlock = ({ notification, onMarkAsRead, onAction }) => {
-  const { id, type, title, date, isRead } = notification;
+  return message || typeTitles[type] || "Нове повідомлення";
+};
+
+const requiresAction = (type) => {
+  return ["friend_invitation", "added_to_ebill"].includes(type);
+};
+
+const NotificationBlock = ({ notification }) => {
+  const { type, message, status, createdAt } = notification;
+  const navigate = useNavigate();
+
+  const isRead = status === "read";
+  const title = getNotificationTitle(type, message);
+  const formattedDate = formatDate(createdAt);
 
   const titleColor = isRead ? "text-[#495266]" : "text-black";
   const dateColor = isRead ? "text-[#4B6AA0]" : "text-[#042860]";
 
-  const handleMarkReadClick = () => {
-    if (!isRead) onMarkAsRead(id);
+  const handleGoToClick = () => {
+    if (type === "friend_invitation") {
+      navigate("/friends");
+    } else if (type === "added_to_ebill") {
+      navigate("/checks");
+    }
   };
-
-  const handleActionClick = (action) => {
-    onAction(id, action);
-  };
-
-  const isActionableInvite = ["friend_invite", "group_invite"].includes(type);
 
   const renderBottomContent = () => {
-    if (isActionableInvite) {
-      if (isRead) {
-        return (
-          <span className="text-[18px] font-semibold text-[#495266] mr-[28px]">
-            Прочитано
-          </span>
-        );
-      } else {
-        return (
-          <div className="flex mr-[20px]">
-            <button
-              className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center ml-[160px]"
-              onClick={() => handleActionClick("accept")}
-            >
-              Прийняти
-            </button>
-            <button
-              className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center ml-[12px]"
-              onClick={() => handleActionClick("reject")}
-            >
-              Відхилити
-            </button>
-          </div>
-        );
-      }
+    if (requiresAction(type)) {
+      return (
+        <button
+          className="w-[116px] h-[38px] bg-[#042860] text-white text-[14px] font-semibold rounded-[12px] flex items-center justify-center"
+          onClick={handleGoToClick}
+        >
+          Перейти
+        </button>
+      );
     } else {
-      if (!isRead) {
-        return (
-          <button
-            className="w-[212px] h-[38px] bg-[#042860] text-white text-[16px] font-semibold rounded-[12px] ml-[192px] mr-[20px]"
-            onClick={handleMarkReadClick}
-          >
-            Позначити як прочитане
-          </button>
-        );
-      } else {
-        return (
-          <span className="text-[18px] font-semibold text-[#495266] mr-[28px]">
-            Прочитано
-          </span>
-        );
-      }
+      return (
+        <span
+          className={`text-[18px] font-semibold mr-[28px] ${
+            isRead ? "text-[#495266]" : "text-[#042860]"
+          }`}
+        >
+          {isRead ? "Прочитано" : "Нове повідомлення"}
+        </span>
+      );
     }
   };
 
@@ -145,17 +135,15 @@ const NotificationBlock = ({ notification, onMarkAsRead, onAction }) => {
     <div className="w-[424px] h-[134px] bg-[#B6CDFF] rounded-[16px] flex flex-col justify-between p-0 m-0 shrink-0">
       <div className="flex justify-between mt-[20px] ml-[28px] mr-[28px]">
         <p
-          className={`text-[18px] text-left font-semibold ${titleColor} line-clamp-2 leading-tight`}
+          className={`text-[18px] text-left font-semibold ${titleColor} line-clamp-2 leading-tight flex-grow mr-4`}
         >
           {title}
         </p>
-        <span
-          className={`text-[14px] font-normal ${dateColor} flex-shrink-0 ml-2`}
-        >
-          {date}
+        <span className={`text-[14px] font-normal ${dateColor} flex-shrink-0`}>
+          {formattedDate}
         </span>
       </div>
-      <div className="flex justify-end items-center mb-[20px]">
+      <div className="flex justify-end items-center mb-[20px] mr-[20px]">
         {renderBottomContent()}
       </div>
     </div>
@@ -164,28 +152,74 @@ const NotificationBlock = ({ notification, onMarkAsRead, onAction }) => {
 
 export default function MyNotifications() {
   const { updateUnreadCount } = useOutletContext();
-
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem("myNotifications_v3");
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return initialNotificationsData;
-  });
-
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  const latestNotificationsRef = useRef([]);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await notificationsAPI.getAllNotifications();
+      setNotifications(data);
+    } catch (err) {
+      console.error("Помилка завантаження повідомлень:", err);
+      setError(err.message);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem("myNotifications_v3", JSON.stringify(notifications));
-    const currentUnreadCount = notifications.filter((n) => !n.isRead).length;
-    updateUnreadCount(currentUnreadCount);
+    loadNotifications();
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    latestNotificationsRef.current = notifications;
+  }, [notifications]);
+
+  useEffect(() => {
+    const unreadCount = notifications.filter(
+      (n) => n.status === "unread"
+    ).length;
+    updateUnreadCount(unreadCount);
   }, [notifications, updateUnreadCount]);
 
+  useEffect(() => {
+    return () => {
+      const allNotifications = latestNotificationsRef.current || [];
+      const unreadIds = allNotifications
+        .filter((n) => n.status === "unread")
+        .map((n) => n.id);
+
+      if (unreadIds.length === 0) {
+        updateUnreadCount(0);
+        return;
+      }
+
+      notificationsAPI
+        .markMultipleAsRead(unreadIds)
+        .catch((err) => {
+          console.error(
+            "Помилка при збереженні прочитаних повідомлень:",
+            err
+          );
+        })
+        .finally(() => {
+          updateUnreadCount(0);
+        });
+    };
+  }, [updateUnreadCount]);
+
   const sortedNotifications = useMemo(() => {
-    return [...notifications].sort((a, b) => {
-      return parseDate(b.date) - parseDate(a.date);
-    });
+    return [...notifications].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
   }, [notifications]);
 
   const currentNotifications = useMemo(() => {
@@ -196,28 +230,12 @@ export default function MyNotifications() {
 
   const totalPages = Math.ceil(sortedNotifications.length / itemsPerPage);
 
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-  };
-
-  const handleAction = (id, action) => {
-    console.log(`Notification ID: ${id}, Action: ${action}`);
-    const notificationToMark = notifications.find((n) => n.id === id);
-    if (notificationToMark && !notificationToMark.isRead) {
-      markAsRead(id);
-    }
-  };
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
   const column1 = currentNotifications.filter((_, index) => index % 2 === 0);
   const column2 = currentNotifications.filter((_, index) => index % 2 !== 0);
-
-  const desiredMarginTop = 20;
 
   return (
     <div
@@ -237,8 +255,20 @@ export default function MyNotifications() {
         </h1>
 
         <div className="flex-grow flex justify-center gap-[8px] w-full">
-          {sortedNotifications.length === 0 ? (
-            <div className="mt-[60px] flex-1 flex flex-col justify-start items-center text-center px-4">
+          {loading ? (
+            <Loader text="Завантаження сторінки..." />
+          ) : error ? (
+            <div className="mt-[60px] flex-1 flex flex-col justify-center items-center text-center px-4">
+              <p className="text-red-600 text-[18px] mb-4">{error}</p>
+              <button
+                onClick={loadNotifications}
+                className="w-[200px] h-[40px] bg-[#042860] text-white text-[16px] font-semibold rounded-[12px]"
+              >
+                Спробувати ще раз
+              </button>
+            </div>
+          ) : sortedNotifications.length === 0 ? (
+            <div className="mt-[60px] flex-1 flex flex-col justify-center items-center text-center px-4">
               <p className="text-[#4B6C9A] text-[18px]">
                 Поки що у Вас немає жодного повідомлення...
               </p>
@@ -246,22 +276,18 @@ export default function MyNotifications() {
           ) : (
             <>
               <div className="flex flex-col gap-[8px]">
-                {column1.map((n) => (
+                {column1.map((notification) => (
                   <NotificationBlock
-                    key={n.id}
-                    notification={n}
-                    onMarkAsRead={markAsRead}
-                    onAction={handleAction}
+                    key={notification.id}
+                    notification={notification}
                   />
                 ))}
               </div>
               <div className="flex flex-col gap-[8px]">
-                {column2.map((n) => (
+                {column2.map((notification) => (
                   <NotificationBlock
-                    key={n.id}
-                    notification={n}
-                    onMarkAsRead={markAsRead}
-                    onAction={handleAction}
+                    key={notification.id}
+                    notification={notification}
                   />
                 ))}
               </div>

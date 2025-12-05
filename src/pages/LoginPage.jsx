@@ -52,8 +52,6 @@ export default function LoginPage() {
       setGoogleError(null);
       setServerError("");
 
-      console.log("Google auth response:", response);
-
       const authResult = await authAPI.googleAuth(response.credential);
 
       if (authResult.isNewUser === true || authResult.userExists === false) {

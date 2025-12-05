@@ -197,4 +197,26 @@ export const contactsAPI = {
 
     return await response.json();
   },
+
+  validateUsers: async (userIds) => {
+    const token = getJWT();
+    if (!token) {
+      throw new Error("Токен не знайдено");
+    }
+
+    const response = await fetch(`${API_URL}/api/users/validate`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userIds }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Помилка перевірки користувачів");
+    }
+
+    return await response.json();
+  }
 };

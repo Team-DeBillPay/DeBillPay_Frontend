@@ -14,18 +14,45 @@ import MyProfile from "../../assets/icons/myprofile.png";
 import MyProfileOn from "../../assets/icons/myprofileOn.png";
 import MyNotifications from "../../assets/icons/mynotificationsIcon.png";
 import MyNotificationsOn from "../../assets/icons/mynotificationsIconOn.png";
+import { getJWT } from "../../utils/jwt";
 
 export default function LayoutPR() {
   const location = useLocation();
 
-  const [unreadCount, setUnreadCount] = useState(() => {
-    const saved = localStorage.getItem("myNotifications");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.filter((n) => !n.isRead).length;
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = getJWT();
+    setIsAuthenticated(!!token);
+    
+    if (token) {
+      loadUnreadCount();
     }
-    return 3;
-  });
+  }, []);
+
+  const loadUnreadCount = async () => {
+    try {
+      const token = getJWT();
+      if (!token) return;
+
+      const response = await fetch("https://debillpay-backend.onrender.com/api/notifications/all", {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const notifications = await response.json();
+        const unread = notifications.filter(n => n.status === 'unread').length;
+        setUnreadCount(unread);
+      }
+    } catch (error) {
+      console.error('Error loading notifications count:', error);
+    }
+  };
 
   const updateUnreadCount = (newCount) => {
     setUnreadCount(Math.max(0, newCount));
@@ -48,7 +75,6 @@ export default function LayoutPR() {
   return (
     <div className="flex h-full min-h-screen text-white bg-[#2A283B]">
       <aside className="w-[360px] flex-shrink-0 flex flex-col justify-between bg-[#021024]">
-        {/* Шапка сайдбара: высота 90px */}
         <div className="bg-[#052659] flex items-center px-6 h-[90px] min-h-[90px]">
           <img src={logo} alt="logo" className="w-10 h-10" />
           <h1 className="text-xl font-semibold text-white leading-none">
@@ -56,7 +82,6 @@ export default function LayoutPR() {
           </h1>
         </div>
 
-        {/* Меню: тот же отступ слева и сверху */}
         <div className="flex flex-col items-start gap-4 pl-[44px] mt-[52px]">
           {menuItems.map((item) => {
             const isActive = matchPath({ path: item.path, end: true }, location.pathname);

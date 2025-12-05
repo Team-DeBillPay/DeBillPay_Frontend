@@ -4,7 +4,7 @@ import filterIcon from "../assets/icons/filterIcon.png";
 import CheckCard from "../components/CheckCard";
 import { checksAPI } from "../api/checks";
 import { getIdFromJWT } from "../utils/jwt";
-
+import Loader from "../components/Reuse/Loader";
 
 const Pagination = ({ totalPages, currentPage, onPageChange }) => {
   const pageNumbers = [];
@@ -115,7 +115,7 @@ export default function MyChecksPage() {
     return (
       <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
         <div className="bg-white rounded-[24px] pb-10 min-h-[600px] flex items-center justify-center">
-          <p className="text-xl text-[#4B6C9A]">Завантаження чеків...</p>
+          <Loader text="Завантаження сторінки..." />
         </div>
       </div>
     );
@@ -134,14 +134,11 @@ export default function MyChecksPage() {
   return (
     <div className="p-7 bg-[#B6CDFF] rounded-[32px]">
       <div className="bg-white rounded-[24px] pb-10">
-        {/* Заголовок */}
         <h1 className="pt-7 text-center text-[32px] font-semibold text-gray-800">
           Мої чеки
         </h1>
 
-        {/* Блок Пошуку та Фільтра */}
         <div className="flex justify-between items-center mt-7 px-7">
-          {/* Блок пошуку з фіксованими розмірами */}
           <div className="flex items-center w-[440px] h-[38px] border border-gray-300 rounded-lg px-4 bg-white text-[#5F6E99]">
             <input
               type="text"
@@ -161,7 +158,6 @@ export default function MyChecksPage() {
           </button>
         </div>
 
-        {/* Основний Контент */}
         {checks.length === 0 ? (
           <div className="w-[936px] h-[571px] flex items-center justify-center mx-auto">
             <p className="text-xl text-[#4B6C9A]">

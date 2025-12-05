@@ -23,8 +23,6 @@ const getLockStatus = (status) => {
       return "open";
     case "закритий":
       return "closed";
-    case "архівний":
-      return "closed";
     default:
       return "open";
   }
@@ -57,7 +55,6 @@ const CheckCard = ({ check }) => {
 
   return (
     <div className="bg-[#456DB4] rounded-[24px] py-4 px-6 text-white flex flex-col h-full">
-      {/* Верхній блок: Дата та Статуси */}
       <div className="flex justify-between items-center">
         <span className="text-sm opacity-90">
           {formatDate(check.createdAt)}
@@ -84,12 +81,10 @@ const CheckCard = ({ check }) => {
         </div>
       </div>
 
-      {/* Середній блок: Назва */}
       <div className="flex-grow my-3">
         <h3 className="text-xl font-bold text-left truncate">{check.name}</h3>
       </div>
 
-      {/* Нижній блок: Валюта та Кнопка */}
       <div className="flex justify-between items-center">
         <span className="text-sm opacity-90">
           {check.currency} • {check.scenario}
