@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import searchIcon from "../assets/icons/searchIcon.png";
 import filterIcon from "../assets/icons/filterIcon.png";
-import CheckCard from "../components/CheckCard";
+import CheckCard from "../components/CheckCards/CheckCard";
 import { checksAPI } from "../api/checks";
 import { getIdFromJWT } from "../utils/jwt";
 import Loader from "../components/Reuse/Loader";
@@ -186,7 +186,7 @@ export default function MyChecksPage() {
                 </div>
               )}
             </div>
-            
+
             {totalPages > 1 && (
               <div className="mt-9">
                 <Pagination

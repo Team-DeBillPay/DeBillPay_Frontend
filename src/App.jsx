@@ -11,7 +11,7 @@ import CheckDetailPage from "./pages/CheckDetailPage.jsx";
 import CheckHistoryPage from "./pages/CheckHistoryPage.jsx";
 import MyNotifications from "./pages/MyNotifications.jsx";
 import CheckCommentsPage from "./pages/CheckCommentsPage.jsx";
-
+import AnalyticsPage from "./pages/AnalyticsPage.jsx";
 import MyFriends from "./pages/MyFriends.jsx";
 
 const NotFound = () => (
@@ -38,6 +38,7 @@ export default function App() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="friends" element={<MyFriends />} />
         <Route path="messages" element={<MyNotifications />} />
+        <Route path="activities" element={<AnalyticsPage />} />
 
         {/* додаткові роути з e-bills */}
         <Route path="checks">

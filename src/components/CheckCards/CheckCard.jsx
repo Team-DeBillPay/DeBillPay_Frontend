@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import lockIcon from "../assets/icons/lock2.png";
-import unlockIcon from "../assets/icons/unlock3.png";
-import { getIdFromJWT } from "../utils/jwt";
+import lockIcon from "../../assets/icons/lock2.png";
+import unlockIcon from "../../assets/icons/unlock3.png";
+import { getIdFromJWT } from "../../utils/jwt";
 
 const getStatusColor = (paymentStatus) => {
   switch (paymentStatus) {

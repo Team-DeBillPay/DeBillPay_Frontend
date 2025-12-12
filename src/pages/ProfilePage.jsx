@@ -44,13 +44,13 @@ export default function ProfilePage() {
     try {
       setIsLoading(true);
       const userId = getIdFromJWT();
-      
+
       if (!userId) {
         throw new Error("Користувач не авторизований");
       }
 
       const userDataFromApi = await usersAPI.getUserById(userId);
-      
+
       setUserData({
         firstName: userDataFromApi.firstName || "",
         lastName: userDataFromApi.lastName || "",
@@ -60,7 +60,7 @@ export default function ProfilePage() {
       });
     } catch (error) {
       console.error("Помилка завантаження даних:", error);
-      setErrors(prev => ({ ...prev, general: error.message }));
+      setErrors((prev) => ({ ...prev, general: error.message }));
     } finally {
       setIsLoading(false);
     }
@@ -71,18 +71,18 @@ export default function ProfilePage() {
       setIsChecksLoading(true);
       const checksData = await checksAPI.getAllChecks();
       const currentUserId = getIdFromJWT();
-      
-      const organizedChecks = checksData.filter(check => {
+
+      const organizedChecks = checksData.filter((check) => {
         const userParticipant = check.participants?.find(
-          participant => participant.userId.toString() === currentUserId
+          (participant) => participant.userId.toString() === currentUserId
         );
         return userParticipant?.isAdminRights === true;
       });
-      
+
       setUserChecks(organizedChecks);
     } catch (error) {
       console.error("Помилка завантаження чеків:", error);
-      setErrors(prev => ({ ...prev, general: error.message }));
+      setErrors((prev) => ({ ...prev, general: error.message }));
     } finally {
       setIsChecksLoading(false);
     }
@@ -128,7 +128,7 @@ export default function ProfilePage() {
       }
 
       const updatedUser = await usersAPI.updateUser(userId, updateData);
-      
+
       setUserData({
         ...userData,
         firstName: updatedUser.firstName,
@@ -140,7 +140,7 @@ export default function ProfilePage() {
       setIsEditing(false);
     } catch (error) {
       console.error("Помилка оновлення даних:", error);
-      setErrors(prev => ({ ...prev, general: error.message }));
+      setErrors((prev) => ({ ...prev, general: error.message }));
     } finally {
       setIsLoading(false);
     }
@@ -192,8 +192,6 @@ export default function ProfilePage() {
         return "open";
       case "закритий":
         return "closed";
-      case "архівний":
-        return "closed";
       default:
         return "open";
     }
@@ -229,7 +227,7 @@ export default function ProfilePage() {
                 {errors.general}
               </div>
             )}
-            
+
             <div className="w-full h-[292px] bg-white rounded-[24px] flex flex-col items-center pt-[20px]">
               <h2 className="text-[32px] text-[#021024] font-semibold mb-[16px] flex items-center gap-2">
                 Особистий профіль
@@ -303,7 +301,7 @@ export default function ProfilePage() {
                       onChange={handleFormChange}
                       className={`w-[340px] h-[33px] border ${
                         errors.currentPassword
-                          ? "border-red-500" 
+                          ? "border-red-500"
                           : "border-gray-400"
                       } rounded-[8px] px-[12px] text-[#021024]`}
                     />
@@ -325,7 +323,7 @@ export default function ProfilePage() {
                       onChange={handleFormChange}
                       className={`w-[340px] h-[33px] border ${
                         errors.newPassword
-                          ? "border-red-500" 
+                          ? "border-red-500"
                           : "border-gray-400"
                       } rounded-[8px] px-[12px] text-[#021024]`}
                     />
@@ -363,7 +361,7 @@ export default function ProfilePage() {
                   {errors.general}
                 </div>
               )}
-              
+
               <div className="w-[468px] h-[292px] bg-white rounded-[24px] flex flex-col items-center pt-[20px]">
                 <h2 className="text-[32px] text-[#021024] font-semibold mb-[16px]">
                   Особистий профіль
@@ -428,9 +426,11 @@ export default function ProfilePage() {
                     {userChecks.map((check) => {
                       const currentUserId = getIdFromJWT();
                       const userParticipant = check.participants?.find(
-                        participant => participant.userId.toString() === currentUserId
+                        (participant) =>
+                          participant.userId.toString() === currentUserId
                       );
-                      const paymentStatus = userParticipant?.paymentStatus || "непогашений";
+                      const paymentStatus =
+                        userParticipant?.paymentStatus || "непогашений";
                       const lockStatus = getLockStatus(check.status);
 
                       return (
@@ -439,7 +439,9 @@ export default function ProfilePage() {
                           className="w-[338px] h-[140px] bg-[#456DB4] text-white rounded-[16px] flex flex-col justify-between py-[20px]"
                         >
                           <div className="flex items-center justify-between px-[24px]">
-                            <p className="text-[12px]">{formatDate(check.createdAt)}</p>
+                            <p className="text-[12px]">
+                              {formatDate(check.createdAt)}
+                            </p>
                             <div className="flex items-center gap-[8px]">
                               <div
                                 className={`w-[24px] h-[24px] rounded-full ${getStatusColor(
@@ -461,8 +463,10 @@ export default function ProfilePage() {
                               </p>
                             </div>
                             <div className="flex justify-end items-center pr-[24px]">
-                              <button 
-                                onClick={() => handleCheckDetails(check.ebillId)}
+                              <button
+                                onClick={() =>
+                                  handleCheckDetails(check.ebillId)
+                                }
                                 className="w-[155px] h-[38px] bg-[#B6CDFF] text-black font-semibold rounded-[8px] hover:bg-[#A4C2F5] transition"
                               >
                                 Детальніше
