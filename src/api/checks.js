@@ -52,27 +52,29 @@ export const checksAPI = {
       throw new Error("Токен не знайдено");
     }
 
-    const response = await fetch(`${API_URL}/api/ebills/${ebillId}/editor-rights`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${API_URL}/api/ebills/${ebillId}/editor-rights`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
       let errorMessage = "Помилка оновлення прав редактора";
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
-      } catch (e) {
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
 
-    const contentLength = response.headers.get('content-length');
-    if (response.status === 204 || contentLength === '0') {
+    const contentLength = response.headers.get("content-length");
+    if (response.status === 204 || contentLength === "0") {
       return { success: true };
     }
 
@@ -85,14 +87,17 @@ export const checksAPI = {
       throw new Error("Токен не знайдено");
     }
 
-    const response = await fetch(`${API_URL}/api/ebills/${ebillId}/participants/add`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await fetch(
+      `${API_URL}/api/ebills/${ebillId}/participants/add`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
 
     console.log("Ответ сервера:", response.status, response.statusText);
 
@@ -108,8 +113,8 @@ export const checksAPI = {
       throw new Error(errorMessage);
     }
 
-    const contentLength = response.headers.get('content-length');
-    if (response.status === 204 || contentLength === '0') {
+    const contentLength = response.headers.get("content-length");
+    if (response.status === 204 || contentLength === "0") {
       return { success: true, message: "Учасники успішно додані" };
     }
 
@@ -124,65 +129,69 @@ export const checksAPI = {
       throw new Error("Токен не знайдено");
     }
 
-    const response = await fetch(`${API_URL}/api/ebills/${ebillId}/participants/update`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updateData),
-    });
+    const response = await fetch(
+      `${API_URL}/api/ebills/${ebillId}/participants/update`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      }
+    );
 
     if (!response.ok) {
       let errorMessage = "Помилка оновлення учасників";
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
-      } catch (e) {
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
 
-    const contentLength = response.headers.get('content-length');
-    if (response.status === 204 || contentLength === '0') {
+    const contentLength = response.headers.get("content-length");
+    if (response.status === 204 || contentLength === "0") {
       return { success: true };
     }
 
     return await response.json();
   },
 
-removeParticipant: async (ebillId, participantId) => {
-  const token = getJWT();
-  if (!token) {
-    throw new Error("Токен не знайдено");
-  }
-
-  const response = await fetch(
-    `${API_URL}/api/ebills/${ebillId}/participants/${participantId}/remove`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+  removeParticipant: async (ebillId, participantId) => {
+    const token = getJWT();
+    if (!token) {
+      throw new Error("Токен не знайдено");
     }
-  );
 
-  if (!response.ok) {
-    let errorMessage = "Помилка видалення учасника";
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch (e) {
+    const response = await fetch(
+      `${API_URL}/api/ebills/${ebillId}/participants/${participantId}/remove`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Помилка видалення учасника";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (e) {}
+      throw new Error(errorMessage);
     }
-    throw new Error(errorMessage);
-  }
 
-  if (response.status === 204 || response.headers.get("content-length") === "0") {
-    return { success: true };
-  }
+    if (
+      response.status === 204 ||
+      response.headers.get("content-length") === "0"
+    ) {
+      return { success: true };
+    }
 
-  return await response.json();
+    return await response.json();
   },
 
   deleteCheck: async (ebillId) => {
@@ -204,15 +213,17 @@ removeParticipant: async (ebillId, participantId) => {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
 
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
+    if (
+      response.status === 204 ||
+      response.headers.get("content-length") === "0"
+    ) {
       return { success: true };
     }
-    
+
     return await response.json();
   },
 
@@ -235,8 +246,7 @@ removeParticipant: async (ebillId, participantId) => {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
 
@@ -263,17 +273,76 @@ removeParticipant: async (ebillId, participantId) => {
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
-      } catch (e) {
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
 
-    const contentLength = response.headers.get('content-length');
-    if (response.status === 204 || contentLength === '0') {
+    const contentLength = response.headers.get("content-length");
+    if (response.status === 204 || contentLength === "0") {
       return { success: true };
     }
 
     return await response.json();
   },
 
+  getComments: async (ebillId) => {
+    const token = getJWT();
+    if (!token) {
+      throw new Error("Токен не знайдено");
+    }
+
+    const response = await fetch(`${API_URL}/api/ebills/${ebillId}/comments`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Помилка отримання коментарів";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (e) {}
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
+  createComment: async (ebillId, message) => {
+    const token = getJWT();
+    if (!token) {
+      throw new Error("Токен не знайдено");
+    }
+
+    const bodyData = {
+      ebillId: Number(ebillId),
+      text: message,
+    };
+
+    const response = await fetch(
+      `${API_URL}/api/ebills/${ebillId}/comments/create`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bodyData),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = "Помилка створення коментаря";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (e) {}
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
 };

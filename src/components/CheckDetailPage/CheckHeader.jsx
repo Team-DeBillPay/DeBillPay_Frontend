@@ -15,6 +15,7 @@ const CheckHeader = ({
   onOpenPermissions,
   onHistoryClick,
   onDeleteCheck,
+  onCommentsClick,
 }) => {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -80,11 +81,11 @@ const CheckHeader = ({
 
       {!isEditMode && (
         <div className="absolute right-0 flex items-center gap-4 ">
-          <button title="Коментарі">
+          <button title="Коментарі" onClick={onCommentsClick}>
             <img
               src={commentsIcon}
               alt="Коментарі"
-              className="w-[28px] h-[28px]"
+              className="w-[28px] h-[28px] cursor-pointer"
             />
           </button>
           <button title="Історія змін чеку" onClick={onHistoryClick}>

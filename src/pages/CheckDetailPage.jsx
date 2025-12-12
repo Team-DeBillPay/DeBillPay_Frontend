@@ -24,7 +24,8 @@ export default function CheckDetailPage() {
   const [organizerUser, setOrganizerUser] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
-  const [isDeleteParticipantModalOpen, setIsDeleteParticipantModalOpen] = useState(false);
+  const [isDeleteParticipantModalOpen, setIsDeleteParticipantModalOpen] =
+    useState(false);
   const [participantToDelete, setParticipantToDelete] = useState(null);
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -114,8 +115,8 @@ export default function CheckDetailPage() {
       });
 
       const changes = {
-        checkUpdates: {}, 
-        participantUpdates: [], 
+        checkUpdates: {},
+        participantUpdates: [],
       };
 
       if (editedCheck.name !== check.name) {
@@ -124,8 +125,11 @@ export default function CheckDetailPage() {
       if (editedCheck.description !== check.description) {
         changes.checkUpdates.description = editedCheck.description;
       }
-      if (parseFloat(editedCheck.amountOfDept) !== parseFloat(check.amountOfDept)) {
-        changes.checkUpdates.amountOfDept = parseFloat(editedCheck.amountOfDept) || 0;
+      if (
+        parseFloat(editedCheck.amountOfDept) !== parseFloat(check.amountOfDept)
+      ) {
+        changes.checkUpdates.amountOfDept =
+          parseFloat(editedCheck.amountOfDept) || 0;
       }
 
       editedCheck.participants.forEach((editedParticipant) => {
@@ -146,16 +150,18 @@ export default function CheckDetailPage() {
         if (editedCheck.scenario === "спільні витрати") {
           const editedPaid = parseFloat(editedParticipant.paidAmount) || 0;
           const originalPaid = parseFloat(originalParticipant.paidAmount) || 0;
-          
+
           if (editedPaid !== originalPaid) {
             participantUpdate.changes.paidAmount = editedPaid;
           }
         }
 
         if (editedCheck.scenario === "індивідуальні суми") {
-          const editedAssigned = parseFloat(editedParticipant.assignedAmount) || 0;
-          const originalAssigned = parseFloat(originalParticipant.assignedAmount) || 0;
-          
+          const editedAssigned =
+            parseFloat(editedParticipant.assignedAmount) || 0;
+          const originalAssigned =
+            parseFloat(originalParticipant.assignedAmount) || 0;
+
           if (editedAssigned !== originalAssigned) {
             participantUpdate.changes.assignedAmount = editedAssigned;
           }
@@ -175,20 +181,27 @@ export default function CheckDetailPage() {
             await checksAPI.removeParticipant(ebillId, participantId);
             console.log(`Учасник ${participantId} успішно видалений`);
           } catch (err) {
-            console.error(`Помилка при видаленні учасника ${participantId}:`, err);
+            console.error(
+              `Помилка при видаленні учасника ${participantId}:`,
+              err
+            );
             throw err;
           }
         }
       }
 
-      const organizerParticipant = editedCheck.participants.find(p => p.isAdminRights);
-      
-      const organizerUpdate = changes.participantUpdates.find(
-        update => update.participantId === organizerParticipant?.participantId
+      const organizerParticipant = editedCheck.participants.find(
+        (p) => p.isAdminRights
       );
 
-      if (organizerParticipant && (organizerUpdate || Object.keys(changes.checkUpdates).length > 0)) {
-        
+      const organizerUpdate = changes.participantUpdates.find(
+        (update) => update.participantId === organizerParticipant?.participantId
+      );
+
+      if (
+        organizerParticipant &&
+        (organizerUpdate || Object.keys(changes.checkUpdates).length > 0)
+      ) {
         const organizerUpdateData = {
           participantId: organizerParticipant.participantId,
         };
@@ -205,11 +218,10 @@ export default function CheckDetailPage() {
       }
 
       const otherParticipantUpdates = changes.participantUpdates.filter(
-        update => update.participantId !== organizerParticipant?.participantId
+        (update) => update.participantId !== organizerParticipant?.participantId
       );
 
       if (otherParticipantUpdates.length > 0) {
-        
         for (const update of otherParticipantUpdates) {
           try {
             const participantUpdateData = {
@@ -222,9 +234,11 @@ export default function CheckDetailPage() {
             }
 
             await checksAPI.updateParticipants(ebillId, participantUpdateData);
-            
           } catch (err) {
-            console.error(`Помилка при оновленні учасника ${update.participantId}:`, err);
+            console.error(
+              `Помилка при оновленні учасника ${update.participantId}:`,
+              err
+            );
             throw err;
           }
         }
@@ -241,13 +255,14 @@ export default function CheckDetailPage() {
       setIsEditMode(false);
       setEditedCheck(null);
       setParticipantsToDelete([]);
-
-
     } catch (err) {
       console.error("Помилка при збереженні:", err);
 
       let errorMessage = "Помилка при збереженні: ";
-      if (err.message.includes("Failed to fetch") || err.message.includes("CORS")) {
+      if (
+        err.message.includes("Failed to fetch") ||
+        err.message.includes("CORS")
+      ) {
         errorMessage += "Проблема з підключенням до сервера. Спробуйте ще раз.";
       } else {
         errorMessage += err.message;
@@ -270,10 +285,10 @@ export default function CheckDetailPage() {
 
   const handleTitleChange = (val) =>
     setEditedCheck({ ...editedCheck, name: val });
-    
+
   const handleDescriptionChange = (val) =>
     setEditedCheck({ ...editedCheck, description: val });
-    
+
   const handleOrganizerExpenseChange = (val) =>
     setEditedCheck({ ...editedCheck, amountOfDept: val });
 
@@ -292,7 +307,7 @@ export default function CheckDetailPage() {
     const participantToDeleteData = editedCheck.participants.find(
       (p) => p.userId === userId
     );
-  
+
     if (!participantToDeleteData) {
       setError("Учасника не знайдено");
       return;
@@ -306,27 +321,28 @@ export default function CheckDetailPage() {
     setParticipantToDelete({
       userId: participantToDeleteData.userId,
       participantId: participantToDeleteData.participantId,
-      userName: participantToDeleteData.userName
+      userName: participantToDeleteData.userName,
     });
     setIsDeleteParticipantModalOpen(true);
   };
 
   const handleOpenPermissions = () => setIsRightsModalOpen(true);
-  
+
   const handleSaveRights = async (selectedIds) => {
     try {
       const participantsWithRights = check.participants
-        .filter(participant => selectedIds.includes(participant.userId))
-        .map(participant => ({
+        .filter((participant) => selectedIds.includes(participant.userId))
+        .map((participant) => ({
           participantId: participant.participantId,
-          isEditorRights: true
+          isEditorRights: true,
         }));
 
-      await checksAPI.updateEditorRights(ebillId, { participants: participantsWithRights });
-        
+      await checksAPI.updateEditorRights(ebillId, {
+        participants: participantsWithRights,
+      });
+
       await loadCheckData();
       setIsRightsModalOpen(false);
-        
     } catch (err) {
       console.error("Помилка при видачі прав:", err);
       setError(err.message);
@@ -335,7 +351,6 @@ export default function CheckDetailPage() {
 
   const handleAddFriends = async (userIds) => {
     try {
-
       await checksAPI.addParticipants(ebillId, { userIds });
 
       const updatedCheck = await loadCheckData();
@@ -369,25 +384,25 @@ export default function CheckDetailPage() {
   const handleConfirmDelete = async () => {
     try {
       await handleDeleteCheck();
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   const handleConfirmDeleteParticipant = async () => {
     if (!participantToDelete) return;
 
     try {
-      setParticipantsToDelete(prev => [...prev, participantToDelete.participantId]);
+      setParticipantsToDelete((prev) => [
+        ...prev,
+        participantToDelete.participantId,
+      ]);
 
       const updatedParticipants = editedCheck.participants.filter(
         (p) => p.userId !== participantToDelete.userId
       );
       setEditedCheck({ ...editedCheck, participants: updatedParticipants });
 
-
       setIsDeleteParticipantModalOpen(false);
       setParticipantToDelete(null);
-
     } catch (err) {
       console.error("Помилка при додаванні до списку на видалення:", err);
       setError(err.message);
@@ -398,6 +413,10 @@ export default function CheckDetailPage() {
 
   const handleHistoryClick = () => {
     navigate(`/checks/${ebillId}/history`);
+  };
+
+  const handleCommentsClick = () => {
+    navigate(`/checks/${ebillId}/comments`);
   };
 
   const checkToRender = isEditMode ? editedCheck : check;
@@ -459,6 +478,7 @@ export default function CheckDetailPage() {
             onOpenPermissions={handleOpenPermissions}
             onHistoryClick={handleHistoryClick}
             onDeleteCheck={handleOpenDeleteModal}
+            onCommentsClick={handleCommentsClick}
           />
         </div>
 

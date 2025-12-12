@@ -10,7 +10,7 @@ import ChecksPage from "./pages/ChecksPage.jsx";
 import CheckDetailPage from "./pages/CheckDetailPage.jsx";
 import CheckHistoryPage from "./pages/CheckHistoryPage.jsx";
 import MyNotifications from "./pages/MyNotifications.jsx";
-
+import CheckCommentsPage from "./pages/CheckCommentsPage.jsx";
 
 import MyFriends from "./pages/MyFriends.jsx";
 
@@ -44,6 +44,7 @@ export default function App() {
           <Route index element={<ChecksPage />} />
           <Route path=":ebillId" element={<CheckDetailPage />} />
           <Route path=":ebillId/history" element={<CheckHistoryPage />} />
+          <Route path=":ebillId/comments" element={<CheckCommentsPage />} />
         </Route>
       </Route>
     </Routes>
