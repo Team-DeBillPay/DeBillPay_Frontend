@@ -12,42 +12,36 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import CheckCard from "../components/CheckCards/CheckCard"; // Використовуємо ваш існуючий компонент
+import CheckCard from "../components/CheckCards/CheckCard";
 import { analyticsAPI } from "../api/analytics";
-import { checksAPI } from "../api/checks"; // Для завантаження чеків
+import { checksAPI } from "../api/checks"; 
 import { getIdFromJWT } from "../utils/jwt";
 import Loader from "../components/Reuse/Loader";
 import MonitoringCheckCard from "../components/CheckCards/MonitoringCheckCard";
 import { usersAPI } from "../api/users";
 
-// --- КОЛЬОРИ ---
 const COLORS = {
-  active: "#7BE495", // Активний/Відкритий
-  closed: "#E5566C", // Закритий
-  paid: "#A4FFC4", // Погашений
-  partial: "#FEEBBB", // Частково погашений
-  unpaid: "#FFACAE", // Непогашений
+  active: "#7BE495", 
+  closed: "#E5566C", 
+  paid: "#A4FFC4", 
+  partial: "#FEEBBB", 
+  unpaid: "#FFACAE", 
   primaryBlue: "#456DB4",
   textDark: "#021024",
   textLight: "#042860",
 };
 
-// --- MOCK DATA (ЗАГЛУШКИ ДЛЯ ГРАФІКІВ) ---
-
-// 1. Стан оплати моїх боргів
 const debtPaymentStatusData = [
   { name: "Погашені", value: 12, color: COLORS.paid },
   { name: "Частково погашені", value: 5, color: COLORS.partial },
   { name: "Непогашені", value: 3, color: COLORS.unpaid },
 ];
 
-// 2. Статус створених мною чеків
 const myChecksStatusData = [
   { name: "Активні", value: 8, color: COLORS.active },
   { name: "Закриті", value: 15, color: COLORS.closed },
 ];
 
-// 3. Динаміка боргів (Mock response format)
 const debtsFlowMockData = [
   { month: "2025-07", whatILent: 4000, whatIOwe: 2400 },
   { month: "2025-08", whatILent: 3000, whatIOwe: 1398 },
@@ -57,9 +51,6 @@ const debtsFlowMockData = [
   { month: "2025-12", whatILent: 5430, whatIOwe: 0 },
 ];
 
-// --- ДОПОМІЖНІ КОМПОНЕНТИ ГРАФІКІВ ---
-
-// Кастомна легенда для кругових діаграм
 const CustomLegend = ({ payload }) => {
   return (
     <ul className="flex flex-col gap-2 ml-4">
@@ -83,17 +74,14 @@ const CustomLegend = ({ payload }) => {
 export default function AnalyticsPage() {
   const [debtsFlow, setDebtsFlow] = useState(debtsFlowMockData);
   const [allChecks, setAllChecks] = useState([]);
-  const [loading, setLoading] = useState(true); // фолс если заглушки?
+  const [loading, setLoading] = useState(true);
 
-  // Період для лінійного графіка (6 або 12 місяців)
   const [period, setPeriod] = useState(6);
 
-  // Кеш для користувачів: { [userId]: { firstName, lastName, ... } }
   const [usersCache, setUsersCache] = useState({});
 
   const currentUserId = getIdFromJWT();
 
-  // --- ЗАВАНТАЖЕННЯ ДАНИХ ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -107,7 +95,6 @@ export default function AnalyticsPage() {
           setDebtsFlow(flowData);
         } catch (e) {
           console.error("Не вдалося отримати графік боргів:", e);
-          // Заглушка, якщо бекенд не відповідає
           setDebtsFlow([
             { month: "2025-07", whatILent: 0, whatIOwe: 0 },
             { month: "2025-12", whatILent: 0, whatIOwe: 0 },
@@ -125,10 +112,6 @@ export default function AnalyticsPage() {
     }
   }, [currentUserId, period]);
 
-  // --- ОБРОБКА ДАНИХ ---
-
-  // 1. Дані для списку "Моніторинг оплат моїх власних чеків"
-  // Умова: Я організатор (isAdminRights === true) ТА статус === "активний"
   const myActiveChecksList = useMemo(() => {
     if (!currentUserId) return [];
 
@@ -159,10 +142,8 @@ export default function AnalyticsPage() {
 
       const idsToFetch = new Set();
 
-      // Збираємо ID всіх учасників з моїх активних чеків
       myActiveChecksList.forEach((check) => {
         check.participants.forEach((p) => {
-          // Якщо користувача немає в кеші, додаємо в чергу на завантаження
           if (!usersCache[p.userId]) {
             idsToFetch.add(p.userId);
           }
@@ -171,7 +152,6 @@ export default function AnalyticsPage() {
 
       if (idsToFetch.size === 0) return;
 
-      // Завантажуємо дані
       const newUsers = {};
       await Promise.all(
         Array.from(idsToFetch).map(async (id) => {
@@ -185,15 +165,12 @@ export default function AnalyticsPage() {
         })
       );
 
-      // Оновлюємо кеш (додаємо нових до існуючих)
       setUsersCache((prev) => ({ ...prev, ...newUsers }));
     };
 
     fetchMissingUsers();
-  }, [myActiveChecksList, usersCache]); // Залежність від списку чеків
+  }, [myActiveChecksList, usersCache]);
 
-  // 2. Дані для діаграми "Стан оплати моїх боргів"
-  // Умова: Беремо ВСІ чеки, де я є учасником. Дивимось на МІЙ 'paymentStatus'.
   const myDebtsStatusData = useMemo(() => {
     if (!currentUserId) return [];
 
@@ -209,11 +186,10 @@ export default function AnalyticsPage() {
         const status = me.paymentStatus?.toLowerCase();
         if (status === "погашений") paid++;
         else if (status === "частково погашений") partial++;
-        else unpaid++; // "непогашений" або null
+        else unpaid++;
       }
     });
 
-    // Якщо даних немає взагалі, покажемо нулі, щоб графік не зламався
     if (paid === 0 && partial === 0 && unpaid === 0) return [];
 
     return [
@@ -223,8 +199,6 @@ export default function AnalyticsPage() {
     ];
   }, [allChecks, currentUserId]);
 
-  // 3. Дані для діаграми "Статус створених мною чеків"
-  // Умова: Я організатор (isAdminRights === true). Дивимось на загальний 'status' чеку.
   const myCreatedChecksStatusData = useMemo(() => {
     if (!currentUserId) return [];
 
@@ -260,9 +234,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-7 bg-[#B6CDFF] rounded-[32px] min-h-screen">
-      {/* --- БЛОК 1: КРУГОВІ ДІАГРАМИ --- */}
       <div className="flex flex-row justify-between mb-4">
-        {/* Діаграма А: Стан оплати моїх боргів */}
         <div className="bg-white rounded-[24px] w-[49%] h-[320px] p-8 relative">
           <h2 className="text-[20px] text-[#021024] font-semibold absolute top-[28px] left-[36px]">
             Стан оплати моїх боргів
@@ -303,7 +275,6 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Діаграма Б: Статус створених мною чеків */}
         <div className="bg-white rounded-[24px] w-[49%] h-[320px] p-8 relative">
           <h2 className="text-[20px] text-[#021024] font-semibold absolute top-[28px] left-[36px]">
             Статус створених мною чеків
@@ -345,13 +316,11 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* --- БЛОК 2: ЛІНІЙНИЙ ГРАФІК (ДИНАМІКА БОРГІВ) --- */}
       <div className="bg-white rounded-[24px] w-full h-[400px] p-6 mb-4 relative">
         <div className="flex justify-between items-center mb-6 pl-[12px] pr-[12px]">
           <h2 className="text-[20px] text-[#021024] font-semibold mt-[4px]">
             Динаміка боргів
           </h2>
-          {/* Перемикач періоду (6/12 міс) */}
           <div className="flex bg-[#EBF1FF] rounded-lg p-1">
             <button
               onClick={() => setPeriod(6)}
@@ -442,13 +411,11 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* --- БЛОК 3: МОНІТОРИНГ ЧЕКІВ --- */}
       <div className="bg-white rounded-[24px] w-full p-6 relative text-left">
         <h2 className="text-[20px] text-[#021024] font-semibold mt-[4px] ml-[12px] mb-[28px]">
           Моніторинг оплат моїх власних чеків
         </h2>
 
-        {/* Контейнер зі скролом: Висота 694px */}
         <div className="h-[694px] overflow-y-auto custom-scrollbar pr-2">
           {myActiveChecksList.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-[28px] justify-items-center">

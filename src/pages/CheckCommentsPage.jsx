@@ -5,9 +5,8 @@ import Loader from "../components/Reuse/Loader";
 import { getIdFromJWT } from "../utils/jwt";
 import { checksAPI } from "../api/checks";
 
-const CURRENT_USER_ID = "user-123"; // Той самий ID, що і в інших файлах
+const CURRENT_USER_ID = "user-123";
 
-// --- MOCK DATA (ЗАГЛУШКИ) ---
 const mockComments = [
   {
     id: 1,
@@ -18,7 +17,7 @@ const mockComments = [
   },
   {
     id: 2,
-    userId: "user-123", // Це ви
+    userId: "user-123",
     userName: "Владислав Якубець",
     message: "Чудово, дякую! Я перевірю.",
     createdAt: "14:32",
@@ -32,7 +31,7 @@ const mockComments = [
   },
   {
     id: 4,
-    userId: "user-123", // Це я
+    userId: "user-123",
     userName: "Владислав Якубець",
     message:
       "Здається, Яся купувала. Зараз додам. Влад, ти ще мені повинен кругленьку суму",
@@ -48,7 +47,6 @@ const mockComments = [
   },
 ];
 
-// Функція форматування часу
 const formatTime = (dateString) => {
   if (!dateString) return "";
   try {
@@ -62,7 +60,6 @@ const formatTime = (dateString) => {
   }
 };
 
-// --- КОМПОНЕНТ ПОВІДОМЛЕННЯ ---
 const CommentItem = ({ comment, isCurrentUser }) => {
   return (
     <div
@@ -70,12 +67,10 @@ const CommentItem = ({ comment, isCurrentUser }) => {
         isCurrentUser ? "items-end" : "items-start"
       }`}
     >
-      {/* Ім'я */}
       <span className="text-[#021024] text-[16px] mb-1 font-medium">
         {isCurrentUser ? "Ви" : comment.userName}
       </span>
 
-      {/* Блок з текстом */}
       <div
         className={`
           max-w-[80%] rounded-[12px] p-[12px] text-[16px] leading-relaxed text-left
@@ -89,7 +84,6 @@ const CommentItem = ({ comment, isCurrentUser }) => {
         {comment.message}
       </div>
 
-      {/* Час */}
       <span className="text-[#7B9CCA] text-[12px] mt-1">
         {formatTime(comment.createdAt)}
       </span>
@@ -97,7 +91,6 @@ const CommentItem = ({ comment, isCurrentUser }) => {
   );
 };
 
-// --- КОМПОНЕНТ ВВЕДЕННЯ ---
 const CommentInput = ({ onSend, isSending }) => {
   const [text, setText] = useState("");
 
@@ -109,7 +102,6 @@ const CommentInput = ({ onSend, isSending }) => {
   };
 
   const handleKeyDown = (e) => {
-    // Відправка по Enter (без Shift)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendClick();
@@ -119,7 +111,6 @@ const CommentInput = ({ onSend, isSending }) => {
   const isButtonActive = text.trim().length > 0 && !isSending;
 
   return (
-    // Блок введення: ширина 492, висота 114, округлення 24
     <div className="mt-[28px] w-[492px] h-[114px] border border-[#D1D4E8] rounded-[24px] p-[24px] relative bg-white flex flex-col flex-shrink-0">
       <textarea
         className="w-full h-full resize-none outline-none text-[#021024] placeholder-[#979AB7] text-[16px] bg-transparent"
@@ -130,7 +121,6 @@ const CommentInput = ({ onSend, isSending }) => {
         disabled={isSending}
       />
 
-      {/* Кнопка відправлення */}
       <button
         onClick={handleSendClick}
         disabled={!isButtonActive}
@@ -149,19 +139,17 @@ const CommentInput = ({ onSend, isSending }) => {
   );
 };
 
-// --- ГОЛОВНА СТОРІНКА ---
 export default function CheckCommentsPage() {
   const { ebillId } = useParams();
   const navigate = useNavigate();
   const [comments, setComments] = useState([]);
-  const messagesEndRef = useRef(null); // Для авто-скролу вниз
+  const messagesEndRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
-  const [usersCache, setUsersCache] = useState({}); // Кеш імен користувачів
+  const [usersCache, setUsersCache] = useState({});
   const currentUserId = getIdFromJWT();
 
-  // Функція для отримання імені (з кешуванням)
   const getUserName = async (userId) => {
     if (usersCache[userId]) return usersCache[userId];
 
@@ -189,18 +177,15 @@ export default function CheckCommentsPage() {
 
         const commentsData = await checksAPI.getComments(ebillId);
 
-        // Збагачуємо коментарі іменами
         const enrichedComments = await Promise.all(
           commentsData.map(async (comment) => {
             let userName;
             let userId = comment.userId || comment.user?.userId;
 
             if (comment.user && comment.user.firstName) {
-              // Якщо бекенд повертає об'єкт user у GET запиті так само як у POST
               userName =
                 `${comment.user.firstName} ${comment.user.lastName}`.trim();
             } else if (userId) {
-              // Якщо тільки ID, довантажуємо ім'я
               userName = await getUserName(userId);
             } else {
               userName = "Невідомий";
@@ -208,7 +193,6 @@ export default function CheckCommentsPage() {
 
             return {
               ...comment,
-              // Використовуємо ebillCommentId або id з бекенду
               id:
                 comment.commentId ||
                 comment.ebillCommentId ||
@@ -216,13 +200,11 @@ export default function CheckCommentsPage() {
                 Math.random(),
               userId: userId,
               userName,
-              // Мапимо text на message, якщо приходить text
               message: comment.text || comment.message,
             };
           })
         );
 
-        // Сортуємо за датою (старі зверху, нові знизу)
         enrichedComments.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
@@ -240,10 +222,8 @@ export default function CheckCommentsPage() {
       loadComments();
     }
 
-    // setComments(mockComments);
   }, [ebillId]);
 
-  // Авто-скрол до останнього повідомлення при додаванні нового
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments]);
@@ -251,23 +231,6 @@ export default function CheckCommentsPage() {
   const handleBack = () => {
     navigate(`/checks/${ebillId}`);
   };
-
-  // Для імітації
-  //   const handleSendComment = (text) => {
-  //     const newComment = {
-  //       id: Date.now(),
-  //       userId: CURRENT_USER_ID,
-  //       userName: "Владислав Якубець", // Тут треба брати ім'я з профілю
-  //       text: text,
-  //       time: new Date().toLocaleTimeString([], {
-  //         hour: "2-digit",
-  //         minute: "2-digit",
-  //       }),
-  //     };
-
-  //     // Додаємо новий коментар до списку (імітація бекенду)
-  //     setComments((prev) => [...prev, newComment]);
-  //     };
 
   const handleSendComment = async (text) => {
     setIsSending(true);
@@ -279,7 +242,7 @@ export default function CheckCommentsPage() {
         userId: newCommentData.user.userId,
         userName:
           `${newCommentData.user.firstName} ${newCommentData.user.lastName}`.trim(),
-        message: newCommentData.text, // Мапимо text -> message
+        message: newCommentData.text,
         createdAt: newCommentData.createdAt,
       };
 
@@ -295,7 +258,6 @@ export default function CheckCommentsPage() {
   return (
     <div className="p-7 bg-[#B6CDFF] rounded-[32px] h-full flex flex-col">
       <div className="bg-white rounded-[24px] px-10 pt-7 pb-9 h-full flex flex-col items-center">
-        {/* Хедер */}
         <div className="relative flex items-center justify-center mb-7 flex-shrink-0 w-full">
           <button
             onClick={handleBack}
@@ -313,8 +275,6 @@ export default function CheckCommentsPage() {
           </h1>
         </div>
 
-        {/* Список повідомлень */}
-        {/* Фіксована ширина 492px, фіксована висота 476px */}
         <div className="w-[492px] h-[476px] overflow-y-auto custom-scrollbar flex flex-col pr-2">
           {loading ? (
             <div className="flex items-center justify-center h-full text-[#042860]">
@@ -329,7 +289,6 @@ export default function CheckCommentsPage() {
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                // Приводимо до рядка для безпечного порівняння
                 isCurrentUser={
                   comment.userId?.toString() === currentUserId?.toString()
                 }
@@ -340,11 +299,9 @@ export default function CheckCommentsPage() {
               Поки немає коментарів.
             </div>
           )}
-          {/* Невидимий елемент для скролу */}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Блок введення */}
         <CommentInput onSend={handleSendComment} isSending={isSending} />
       </div>
     </div>
