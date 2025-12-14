@@ -11,17 +11,21 @@ const Modals = ({
   currentUserId,
   onSaveRights,
   onAddFriends,
+  canGrantRights,
 }) => {
   return (
     <>
-      <GiveRightsModal
-        isOpen={isRightsModalOpen}
-        onClose={() => setIsRightsModalOpen(false)}
-        participants={checkToRender?.participants?.filter(
-          (p) => p.userId.toString() !== currentUserId?.toString()
-        )}
-        onSave={onSaveRights}
-      />
+      {canGrantRights && (
+        <GiveRightsModal
+          isOpen={isRightsModalOpen}
+          onClose={() => setIsRightsModalOpen(false)}
+          participants={checkToRender?.participants?.filter(
+            (p) => p.userId.toString() !== currentUserId?.toString()
+          )}
+          onSave={onSaveRights}
+        />
+      )}
+
       <AddMembersModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

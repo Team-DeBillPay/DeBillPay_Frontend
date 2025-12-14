@@ -98,7 +98,24 @@ export default function CheckDetailPage() {
     }
   }, [ebillId, currentUserId]);
 
+  const checkToRender = isEditMode ? editedCheck : check;
+
+  const currentUserParticipant = useMemo(() => {
+    return check?.participants.find(
+      (p) => p.userId.toString() === currentUserId?.toString()
+    );
+  }, [check, currentUserId]);
+
+  const isAdmin = currentUserParticipant?.isAdminRights || false;
+  const isEditor = currentUserParticipant?.isEditorRights || false;
+
+  const canEditCheck = isAdmin || isEditor;
+  const canDeleteCheck = isAdmin;
+  const canDeleteParticipants = isAdmin;
+  const canGrantRights = isAdmin;
+
   const handleEnableEditMode = () => {
+    if (!canEditCheck) return;
     setIsEditMode(true);
     setEditedCheck(JSON.parse(JSON.stringify(check)));
     setParticipantsToDelete([]);
@@ -106,13 +123,10 @@ export default function CheckDetailPage() {
 
   const handleSave = async () => {
     if (!editedCheck) return;
+    if (!canEditCheck) return;
 
     try {
       setSaveLoading(true);
-      console.log("Початок збереження:", {
-        participantsToDelete,
-        participantsToUpdate: editedCheck.participants.length,
-      });
 
       const changes = {
         checkUpdates: {},
@@ -172,21 +186,15 @@ export default function CheckDetailPage() {
         }
       });
 
-      if (participantsToDelete.length > 0) {
-        console.log("Видаляємо учасників послідовно:", participantsToDelete);
+      if (!canDeleteParticipants && participantsToDelete.length > 0) {
+        setError("Ви не маєте прав на видалення учасників");
+        setParticipantsToDelete([]);
+        return;
+      }
 
+      if (participantsToDelete.length > 0) {
         for (const participantId of participantsToDelete) {
-          try {
-            console.log(`Видаляємо учасника ${participantId}...`);
-            await checksAPI.removeParticipant(ebillId, participantId);
-            console.log(`Учасник ${participantId} успішно видалений`);
-          } catch (err) {
-            console.error(
-              `Помилка при видаленні учасника ${participantId}:`,
-              err
-            );
-            throw err;
-          }
+          await checksAPI.removeParticipant(ebillId, participantId);
         }
       }
 
@@ -223,24 +231,16 @@ export default function CheckDetailPage() {
 
       if (otherParticipantUpdates.length > 0) {
         for (const update of otherParticipantUpdates) {
-          try {
-            const participantUpdateData = {
-              participantId: update.participantId,
-              ...update.changes,
-            };
+          const participantUpdateData = {
+            participantId: update.participantId,
+            ...update.changes,
+          };
 
-            if (Object.keys(changes.checkUpdates).length > 0) {
-              Object.assign(participantUpdateData, changes.checkUpdates);
-            }
-
-            await checksAPI.updateParticipants(ebillId, participantUpdateData);
-          } catch (err) {
-            console.error(
-              `Помилка при оновленні учасника ${update.participantId}:`,
-              err
-            );
-            throw err;
+          if (Object.keys(changes.checkUpdates).length > 0) {
+            Object.assign(participantUpdateData, changes.checkUpdates);
           }
+
+          await checksAPI.updateParticipants(ebillId, participantUpdateData);
         }
       }
 
@@ -300,10 +300,13 @@ export default function CheckDetailPage() {
   };
 
   const handleAddParticipant = () => {
+    if (!canEditCheck) return;
     setIsAddModalOpen(true);
   };
 
   const handleDeleteParticipant = (userId) => {
+    if (!canDeleteParticipants) return;
+
     const participantToDeleteData = editedCheck.participants.find(
       (p) => p.userId === userId
     );
@@ -326,20 +329,25 @@ export default function CheckDetailPage() {
     setIsDeleteParticipantModalOpen(true);
   };
 
-  const handleOpenPermissions = () => setIsRightsModalOpen(true);
+  const handleOpenPermissions = () => {
+    if (!canGrantRights) return;
+    setIsRightsModalOpen(true);
+  };
 
   const handleSaveRights = async (selectedIds) => {
-    try {
-      const participantsWithRights = check.participants
-        .filter((participant) => selectedIds.includes(participant.userId))
-        .map((participant) => ({
-          participantId: participant.participantId,
-          isEditorRights: true,
-        }));
+    if (!canGrantRights) return;
 
-      await checksAPI.updateEditorRights(ebillId, {
-        participants: participantsWithRights,
-      });
+    try {
+      const targetParticipants = check.participants.filter((p) => !p.isAdminRights);
+
+      const payload = {
+        participants: targetParticipants.map((p) => ({
+          participantId: p.participantId,
+          isEditorRights: selectedIds.includes(p.userId),
+        })),
+      };
+
+      await checksAPI.updateEditorRights(ebillId, payload);
 
       await loadCheckData();
       setIsRightsModalOpen(false);
@@ -367,6 +375,8 @@ export default function CheckDetailPage() {
   };
 
   const handleDeleteCheck = async () => {
+    if (!canDeleteCheck) return;
+
     try {
       await checksAPI.deleteCheck(ebillId);
       navigate("/checks");
@@ -378,6 +388,7 @@ export default function CheckDetailPage() {
   };
 
   const handleOpenDeleteModal = () => {
+    if (!canDeleteCheck) return;
     setIsDeleteModalOpen(true);
   };
 
@@ -418,16 +429,6 @@ export default function CheckDetailPage() {
   const handleCommentsClick = () => {
     navigate(`/checks/${ebillId}/comments`);
   };
-
-  const checkToRender = isEditMode ? editedCheck : check;
-
-  const currentUserParticipant = useMemo(() => {
-    return check?.participants.find(
-      (p) => p.userId.toString() === currentUserId?.toString()
-    );
-  }, [check, currentUserId]);
-
-  const isUserOrganizer = currentUserParticipant?.isAdminRights || false;
 
   if (loading) {
     return (
@@ -471,7 +472,7 @@ export default function CheckDetailPage() {
         <div className="mb-5">
           <CheckHeader
             title={checkToRender.name}
-            isUserOrganizer={isUserOrganizer}
+            isUserOrganizer={canEditCheck}
             isEditMode={isEditMode}
             onEditClick={handleEnableEditMode}
             onTitleChange={handleTitleChange}
@@ -479,6 +480,8 @@ export default function CheckDetailPage() {
             onHistoryClick={handleHistoryClick}
             onDeleteCheck={handleOpenDeleteModal}
             onCommentsClick={handleCommentsClick}
+            canGrantRights={canGrantRights}
+            canDeleteCheck={canDeleteCheck}
           />
         </div>
 
@@ -486,7 +489,7 @@ export default function CheckDetailPage() {
           <CheckInfoBlocks
             check={checkToRender}
             currentUserId={currentUserId}
-            isUserOrganizer={isUserOrganizer}
+            isUserOrganizer={canEditCheck}
             organizerUser={organizerUser}
             isEditMode={isEditMode}
             onDescriptionChange={handleDescriptionChange}
@@ -506,6 +509,7 @@ export default function CheckDetailPage() {
           onParticipantChange={handleParticipantChange}
           onAddParticipant={handleAddParticipant}
           onDeleteParticipant={handleDeleteParticipant}
+          canDeleteParticipants={canDeleteParticipants}
         />
 
         {isEditMode ? (
@@ -531,7 +535,8 @@ export default function CheckDetailPage() {
             ebillId={ebillId}
             currentUserData={currentUserParticipant}
             currency={checkToRender.currency}
-            isUserOrganizer={isUserOrganizer}
+            isUserOrganizer={canEditCheck}
+            onRefresh={loadCheckData}
           />
         )}
       </div>
@@ -545,6 +550,7 @@ export default function CheckDetailPage() {
         currentUserId={currentUserId}
         onSaveRights={handleSaveRights}
         onAddFriends={handleAddFriends}
+        canGrantRights={canGrantRights}
       />
 
       <DeleteConfirmationModal

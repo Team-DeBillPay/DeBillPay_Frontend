@@ -2,11 +2,9 @@ import { API_URL } from "./init";
 import { getJWT } from "../utils/jwt";
 
 export const paymentsAPI = {
-  createPayment: async (ebillId, amount) => {
+  create: async ({ ebillId, amount }) => {
     const token = getJWT();
-    if (!token) {
-      throw new Error("Токен не знайдено");
-    }
+    if (!token) throw new Error("Токен не знайдено");
 
     const response = await fetch(`${API_URL}/api/payments/create`, {
       method: "POST",
@@ -15,23 +13,20 @@ export const paymentsAPI = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        ebillId: parseInt(ebillId),
-        amount: parseFloat(amount)
+        ebillId: Number(ebillId),
+        amount: Number(amount),
       }),
     });
 
     if (!response.ok) {
-      let errorMessage = `Помилка створення платежу: ${response.status}`;
+      let errorMessage = `Помилка створення платежу: ${response.status} ${response.statusText}`;
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-        const text = await response.text();
-      }
+      } catch (e) {}
       throw new Error(errorMessage);
     }
 
-    const result = await response.json();
-    return result;
-  }
+    return await response.json();
+  },
 };

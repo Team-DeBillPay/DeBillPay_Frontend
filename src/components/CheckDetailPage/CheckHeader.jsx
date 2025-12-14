@@ -16,6 +16,8 @@ const CheckHeader = ({
   onHistoryClick,
   onDeleteCheck,
   onCommentsClick,
+  canGrantRights,
+  canDeleteCheck,
 }) => {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -95,6 +97,7 @@ const CheckHeader = ({
               className="w-[28px] h-[28px] cursor-pointer"
             />
           </button>
+
           {isUserOrganizer && (
             <div>
               <button title="Налаштування чеку" onClick={toggleSettings}>
@@ -104,10 +107,13 @@ const CheckHeader = ({
                   className="w-[28px] h-[28px] cursor-pointer"
                 />
               </button>
+
               <SettingsMenu
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
                 onAction={handleMenuAction}
+                canGrantRights={canGrantRights}
+                canDeleteCheck={canDeleteCheck}
               />
             </div>
           )}

@@ -14,6 +14,7 @@ const ParticipantsTable = ({
   onParticipantChange,
   onAddParticipant,
   onDeleteParticipant,
+  canDeleteParticipants,
 }) => {
   const formatName = (userId, name, isCurrentUser) => {
     return isCurrentUser ? `${name} (Я)` : name;
@@ -118,11 +119,13 @@ const ParticipantsTable = ({
                 <th className="p-3 border border-[#8A9CCB]">Залишок боргу</th>
               </>
             )}
-            {isEditMode && (
+
+            {isEditMode && canDeleteParticipants && (
               <th className="p-3 border border-[#8A9CCB] w-[60px]"></th>
             )}
           </tr>
         </thead>
+
         <tbody className="text-left text-[18px] text-[#042860]">
           {filteredParticipants.map((p) => {
             const difference = (p.paidAmount || 0) - (p.assignedAmount || 0);
@@ -141,7 +144,6 @@ const ParticipantsTable = ({
 
                 {scenario === "спільні витрати" ? (
                   <>
-                    {/* Спільні витрати: Редагуємо ТІЛЬКИ 'paidAmount' */}
                     <td className="p-3 border border-[#8A9CCB]">
                       {isEditMode && canEditPaidAmount(scenario) ? (
                         <input
@@ -181,7 +183,6 @@ const ParticipantsTable = ({
                   </>
                 ) : (
                   <>
-                    {/* Інші сценарії: Редагуємо ТІЛЬКИ 'assignedAmount' в індивідуальних сумах */}
                     <td className="p-3 border border-[#8A9CCB]">
                       {isEditMode && canEditAssignedAmount(scenario) ? (
                         <input
@@ -209,7 +210,7 @@ const ParticipantsTable = ({
                   </>
                 )}
 
-                {isEditMode && (
+                {isEditMode && canDeleteParticipants && (
                   <td className="p-3 border border-[#8A9CCB] text-center">
                     <button
                       onClick={() => onDeleteParticipant(p.userId)}

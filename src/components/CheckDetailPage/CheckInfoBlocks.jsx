@@ -35,6 +35,10 @@ const CheckInfoBlocks = ({
 }) => {
   const { description, status, amountOfDept, currency, scenario } = check;
 
+  const organizerParticipant = check?.participants?.find((p) => p.isAdminRights);
+  const isCurrentUserOrganizer =
+    organizerParticipant?.userId?.toString() === currentUserId?.toString();
+
   const getOrganizerName = () => {
     if (!organizerUser) return "Завантаження...";
 
@@ -58,9 +62,10 @@ const CheckInfoBlocks = ({
             className="w-10 h-10 rounded-full"
           />
           <span className="font-medium text-[18px] text-[#042860]">
-            {getOrganizerName()} {isUserOrganizer && "(Я)"}
+            {getOrganizerName()} {isCurrentUserOrganizer && "(Я)"}
           </span>
         </div>
+
         {scenario !== "спільні витрати" && (
           <div className="mt-4 flex flex-col gap-[8px]">
             <span className="text-[18px] text-[#042860]">Витрати:</span>

@@ -1,6 +1,12 @@
 import React from "react";
 
-const SettingsMenu = ({ isOpen, onClose, onAction }) => {
+const SettingsMenu = ({
+  isOpen,
+  onClose,
+  onAction,
+  canGrantRights,
+  canDeleteCheck,
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -22,23 +28,29 @@ const SettingsMenu = ({ isOpen, onClose, onAction }) => {
             Редагувати чек
           </button>
 
-          <div className="h-[1px] bg-[#D1D4E8] mx-[20px]"></div>
+          {canGrantRights && (
+            <>
+              <div className="h-[1px] bg-[#D1D4E8] mx-[20px]"></div>
+              <button
+                onClick={() => onAction("permissions")}
+                className="py-[20px] px-[20px] text-[18px] text-[#042860] font-medium hover:bg-gray-50 transition-colors"
+              >
+                Надати права учасникам
+              </button>
+            </>
+          )}
 
-          <button
-            onClick={() => onAction("permissions")}
-            className="py-[20px] px-[20px] text-[18px] text-[#042860] font-medium hover:bg-gray-50 transition-colors"
-          >
-            Надати права учасникам
-          </button>
-
-          <div className="h-[1px] bg-[#D1D4E8] mx-[20px]"></div>
-
-          <button
-            onClick={() => onAction("delete")}
-            className="py-[20px] px-[20px] text-[18px] text-[#E5566C] font-medium hover:bg-gray-50 transition-colors"
-          >
-            Видалити чек
-          </button>
+          {canDeleteCheck && (
+            <>
+              <div className="h-[1px] bg-[#D1D4E8] mx-[20px]"></div>
+              <button
+                onClick={() => onAction("delete")}
+                className="py-[20px] px-[20px] text-[18px] text-[#E5566C] font-medium hover:bg-gray-50 transition-colors"
+              >
+                Видалити чек
+              </button>
+            </>
+          )}
         </div>
       </div>
     </>
