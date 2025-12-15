@@ -98,14 +98,14 @@ export default function LayoutPR() {
                 <img src={iconSrc} alt="" className="w-6 h-6 flex-shrink-0" />
                 <span>{item.label}</span>
 
-                {item.hasBadge && unreadCount > 0 && (
+                {item.hasBadge && unreadCount > 0 && location.pathname !== "/messages" && (
                   <div
                     className="absolute right-6 top-1/2 transform -translate-y-1/2 flex items-center justify-center text-black rounded-full bg-[#FFACAE] 
                       w-8 h-8 text-[16px] leading-[32px] text-center font-normal"
                   >
-                    {unreadCount}
-                  </div>
-                )}
+                {unreadCount}
+              </div>
+            )}
               </Link>
             );
           })}

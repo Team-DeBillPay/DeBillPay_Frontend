@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { contactsAPI } from "../api/contacts";
 import { groupsAPI } from "../api/groups";
 import { getIdFromJWT } from "../utils/jwt";
@@ -16,6 +17,8 @@ import CheckIcon from "../assets/icons/checkIcon.png";
 const MY_USER_ID = getIdFromJWT();
 
 const MyFriends = () => {
+  const location = useLocation();
+
   const [friends, setFriends] = useState([]);
   const [invites, setInvites] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -125,6 +128,13 @@ const MyFriends = () => {
 
     load();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.openGroups) {
+      setCurrentView("groups");
+      setIsDropdownOpen(false);
+    }
+  }, [location.state]);
 
   const handleSearchNewFriends = async () => {
     const q = searchQuery.trim();

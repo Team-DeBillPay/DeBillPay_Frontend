@@ -79,6 +79,7 @@ const getNotificationTitle = (type, message) => {
     full_payment: "Повне погашення",
     partial_payment: "Часткове погашення",
     added_to_ebill: "Додано до чеку",
+    added_to_group: "Додано до групи",
     welcome: "Вітаємо!",
   };
 
@@ -86,7 +87,7 @@ const getNotificationTitle = (type, message) => {
 };
 
 const requiresAction = (type) => {
-  return ["friend_invitation", "added_to_ebill"].includes(type);
+  return ["friend_invitation", "added_to_ebill", "added_to_group"].includes(type);
 };
 
 const NotificationBlock = ({ notification }) => {
@@ -105,6 +106,8 @@ const NotificationBlock = ({ notification }) => {
       navigate("/friends");
     } else if (type === "added_to_ebill") {
       navigate("/checks");
+    } else if (type === "added_to_group") {
+      navigate("/friends", { state: { openGroups: true } });
     }
   };
 

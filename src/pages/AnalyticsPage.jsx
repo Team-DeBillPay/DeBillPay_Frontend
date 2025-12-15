@@ -31,26 +31,6 @@ const COLORS = {
   textLight: "#042860",
 };
 
-const debtPaymentStatusData = [
-  { name: "Погашені", value: 12, color: COLORS.paid },
-  { name: "Частково погашені", value: 5, color: COLORS.partial },
-  { name: "Непогашені", value: 3, color: COLORS.unpaid },
-];
-
-const myChecksStatusData = [
-  { name: "Активні", value: 8, color: COLORS.active },
-  { name: "Закриті", value: 15, color: COLORS.closed },
-];
-
-const debtsFlowMockData = [
-  { month: "2025-07", whatILent: 4000, whatIOwe: 2400 },
-  { month: "2025-08", whatILent: 3000, whatIOwe: 1398 },
-  { month: "2025-09", whatILent: 2000, whatIOwe: 9800 },
-  { month: "2025-10", whatILent: 2780, whatIOwe: 3908 },
-  { month: "2025-11", whatILent: 1890, whatIOwe: 4800 },
-  { month: "2025-12", whatILent: 5430, whatIOwe: 0 },
-];
-
 const CustomLegend = ({ payload }) => {
   return (
     <ul className="flex flex-col gap-2 ml-4">
@@ -72,7 +52,7 @@ const CustomLegend = ({ payload }) => {
 };
 
 export default function AnalyticsPage() {
-  const [debtsFlow, setDebtsFlow] = useState(debtsFlowMockData);
+  const [debtsFlow, setDebtsFlow] = useState([]);
   const [allChecks, setAllChecks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -123,17 +103,6 @@ export default function AnalyticsPage() {
         me?.isAdminRights === true && check.status?.toLowerCase() === "активний"
       );
     });
-    //   .map((c) => ({
-    //     id: c.ebillId,
-    //     title: c.name,
-    //     date: new Date(c.createdAt).toLocaleDateString(),
-    //     organizerId: currentUserId,
-    //     paymentStatus:
-    //       c.participants.find(
-    //         (p) => p.userId.toString() === currentUserId.toString()
-    //       )?.paymentStatus || "непогашений",
-    //     lockStatus: c.status?.toLowerCase() === "закритий" ? "closed" : "open",
-    //   }));
   }, [allChecks, currentUserId]);
 
   useEffect(() => {

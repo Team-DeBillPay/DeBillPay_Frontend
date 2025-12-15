@@ -5,48 +5,6 @@ import Loader from "../components/Reuse/Loader";
 import { getIdFromJWT } from "../utils/jwt";
 import { checksAPI } from "../api/checks";
 
-const CURRENT_USER_ID = "user-123";
-
-const mockComments = [
-  {
-    id: 1,
-    userId: "user-789",
-    userName: "Джоніс Золото",
-    message: "Привіт! Я додав свої витрати за таксі.",
-    createdAt: "14:30",
-  },
-  {
-    id: 2,
-    userId: "user-123",
-    userName: "Владислав Якубець",
-    message: "Чудово, дякую! Я перевірю.",
-    createdAt: "14:32",
-  },
-  {
-    id: 3,
-    userId: "user-456",
-    userName: "Віталя П.",
-    message: "А хто купував воду? Я не бачу її в чеку.",
-    createdAt: "14:45",
-  },
-  {
-    id: 4,
-    userId: "user-123",
-    userName: "Владислав Якубець",
-    message:
-      "Здається, Яся купувала. Зараз додам. Влад, ти ще мені повинен кругленьку суму",
-    createdAt: "14:50",
-  },
-  {
-    id: 5,
-    userId: "user-101",
-    userName: "Яся Аналітік",
-    message:
-      "Так, це була я. Там 50 грн. Ще хотіла сказати, що я віддам свій борг найближчим часом. Скоро стипендія прийде і віддам",
-    createdAt: "15:00",
-  },
-];
-
 const formatTime = (dateString) => {
   if (!dateString) return "";
   try {
@@ -277,8 +235,8 @@ export default function CheckCommentsPage() {
 
         <div className="w-[492px] h-[476px] overflow-y-auto custom-scrollbar flex flex-col pr-2">
           {loading ? (
-            <div className="flex items-center justify-center h-full text-[#042860]">
-              Завантаження...
+            <div className="flex items-center justify-center h-full">
+              <Loader text="Завантаження коментарів..." />
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-full text-red-600">
