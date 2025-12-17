@@ -38,7 +38,7 @@ const PaymentSection = ({
     if (check.status === "закритий") return false;
 
     if (isUserOrganizer) {
-      return check.scenario === "спільні витрати" && userDebt > 0;
+      return userDebt > 0;
     }
 
     return userDebt > 0;
@@ -251,7 +251,11 @@ const PaymentSection = ({
       <div className="w-full flex justify-center">
         <button
           onClick={handlePayment}
-          disabled={payLoading || userDebt <= 0 || (paymentType === "partial" && !!error)}
+          disabled={
+            payLoading ||
+            userDebt <= 0 ||
+            (paymentType === "partial" && !!error)
+          }
           className="mt-10 bg-[#456DB4] text-white rounded-[20px] py-4 px-[60px] font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {payLoading ? "Створення платежу..." : "Сплатити борг"}
